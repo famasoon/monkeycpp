@@ -1,5 +1,6 @@
 # 実行ファイル
 monkey
+monkey_test
 
 # コンパイル成果物
 *.o
@@ -10,3 +11,26 @@ monkey
 
 # macOS
 .DS_Store
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+Makefile
+build/
+_deps/
+*.cmake
+.cmake/
+compile_commands.json
+
+# Generated files
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# Debug files
+*.dSYM/
