@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <unordered_map>
 
 namespace AST
 {
@@ -229,10 +230,16 @@ namespace AST
     std::string String() const override;
   };
 
-  enum class ExpressionType {
-    // 既存の型...
-    StringLiteral,
-    // その他の型...
+  // ハッシュリテラル
+  class HashLiteral : public Expression {
+  public:
+    Token::Token token; // '{'トークン
+    std::unordered_map<std::unique_ptr<Expression>, std::unique_ptr<Expression>> pairs;
+
+    explicit HashLiteral(Token::Token tok);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
 } // namespace AST

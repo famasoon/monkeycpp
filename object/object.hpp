@@ -40,8 +40,16 @@ namespace monkey
     virtual std::string inspect() const = 0;
   };
 
+  // HashKeyインターフェースを追加
+  class HashKey {
+  public:
+    virtual ~HashKey() = default;
+    virtual size_t hash() const = 0;
+    virtual bool operator==(const HashKey& other) const = 0;
+  };
+
   // 整数オブジェクト
-  class Integer : public Object
+  class Integer : public Object, public HashKey
   {
   private:
     int64_t value_;
@@ -51,10 +59,19 @@ namespace monkey
     ObjectType type() const override;
     std::string inspect() const override;
     int64_t value() const;
+    size_t hash() const override {
+        return std::hash<int64_t>{}(value_);
+    }
+    bool operator==(const HashKey& other) const override {
+        if (auto* intKey = dynamic_cast<const Integer*>(&other)) {
+            return value_ == intKey->value_;
+        }
+        return false;
+    }
   };
 
   // 真偽値オブジェクト
-  class Boolean : public Object
+  class Boolean : public Object, public HashKey
   {
   private:
     bool value_;
@@ -64,10 +81,19 @@ namespace monkey
     ObjectType type() const override;
     std::string inspect() const override;
     bool value() const;
+    size_t hash() const override {
+        return std::hash<bool>{}(value_);
+    }
+    bool operator==(const HashKey& other) const override {
+        if (auto* boolKey = dynamic_cast<const Boolean*>(&other)) {
+            return value_ == boolKey->value_;
+        }
+        return false;
+    }
   };
 
   // 文字列オブジェクト
-  class String : public Object
+  class String : public Object, public HashKey
   {
   private:
     std::string value_;
@@ -77,6 +103,15 @@ namespace monkey
     ObjectType type() const override;
     std::string inspect() const override;
     const std::string &getValue() const;
+    size_t hash() const override {
+        return std::hash<std::string>{}(value_);
+    }
+    bool operator==(const HashKey& other) const override {
+        if (auto* strKey = dynamic_cast<const String*>(&other)) {
+            return value_ == strKey->getValue();
+        }
+        return false;
+    }
   };
 
   // Nullオブジェクト
@@ -146,23 +181,21 @@ namespace monkey
     std::string inspect() const override;
   };
 
-  // ハッシュのキー型
-  using HashKey = std::variant<int64_t, bool, std::string>;
-
   // ハッシュペア
   class HashPair
   {
   public:
     ObjectPtr key;
     ObjectPtr value;
-    HashPair(ObjectPtr k, ObjectPtr v);
+    HashPair() = default;
+    HashPair(ObjectPtr k, ObjectPtr v) : key(k), value(v) {}
   };
 
   // ハッシュオブジェクト
   class Hash : public Object
   {
   public:
-    std::unordered_map<HashKey, HashPair> pairs;
+    std::unordered_map<size_t, HashPair> pairs;
     ObjectType type() const override;
     std::string inspect() const override;
   };

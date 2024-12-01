@@ -234,6 +234,9 @@ namespace monkey
     if (auto indexExpr = dynamic_cast<const AST::IndexExpression*>(node)) {
         return evalIndexExpression(indexExpr);
     }
+    if (auto hashLiteral = dynamic_cast<const AST::HashLiteral*>(node)) {
+        return evalHashLiteral(hashLiteral);
+    }
 
     return std::make_shared<Null>();
   }
@@ -688,6 +691,60 @@ namespace monkey
       default:
         return "UNKNOWN";
     }
+  }
+
+  ObjectPtr Evaluator::evalHashLiteral(const AST::HashLiteral* node) {
+    if (!node) {
+        return std::make_shared<Null>();
+    }
+
+    auto hash = std::make_shared<Hash>();
+
+    for (const auto& pair : node->pairs) {
+        auto key = eval(pair.first.get());
+        if (isError(key)) return key;
+
+        auto hashKey = dynamic_cast<HashKey*>(key.get());
+        if (!hashKey) {
+            return newError("unusable as hash key: " + objectTypeToString(key->type()));
+        }
+
+        auto value = eval(pair.second.get());
+        if (isError(value)) return value;
+
+        size_t hashValue = hashKey->hash();
+        hash->pairs[hashValue] = HashPair(key, value);
+    }
+
+    return hash;
+  }
+
+  ObjectPtr Evaluator::evalHashIndexExpression(const ObjectPtr& hash, const ObjectPtr& index) {
+    auto hashObj = std::dynamic_pointer_cast<Hash>(hash);
+    if (!hashObj) {
+        return newError("index operator not supported: " + objectTypeToString(hash->type()));
+    }
+
+    auto hashKey = dynamic_cast<HashKey*>(index.get());
+    if (!hashKey) {
+        return newError("unusable as hash key: " + objectTypeToString(index->type()));
+    }
+
+    auto pair = hashObj->pairs.find(hashKey->hash());
+    if (pair == hashObj->pairs.end()) {
+        return std::make_shared<Null>();
+    }
+
+    return pair->second.value;
+  }
+
+  ObjectPtr Evaluator::evalIndexExpression(const ObjectPtr& left, const ObjectPtr& index) {
+    if (left->type() == ObjectType::ARRAY) {
+        return evalArrayIndexExpression(left, index);
+    } else if (left->type() == ObjectType::HASH) {
+        return evalHashIndexExpression(left, index);
+    }
+    return newError("index operator not supported: " + objectTypeToString(left->type()));
   }
 
 } // namespace monkey

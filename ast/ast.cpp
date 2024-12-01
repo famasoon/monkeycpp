@@ -303,4 +303,36 @@ namespace AST
   std::string IndexExpression::String() const {
       return "(" + left->String() + "[" + index->String() + "])";
   }
+
+  // HashLiteral実装
+  HashLiteral::HashLiteral(Token::Token tok) : token(std::move(tok)) {}
+
+  void HashLiteral::expressionNode() {}
+
+  std::string HashLiteral::TokenLiteral() const {
+      return token.literal;
+  }
+
+  std::string HashLiteral::String() const {
+      std::string result = "{";
+      bool first = true;
+      
+      for (const auto& pair : pairs) {
+          if (!first) {
+              result += ", ";
+          }
+          first = false;
+          
+          if (pair.first) {
+              result += pair.first->String();
+          }
+          result += ": ";
+          if (pair.second) {
+              result += pair.second->String();
+          }
+      }
+      
+      result += "}";
+      return result;
+  }
 } // namespace AST

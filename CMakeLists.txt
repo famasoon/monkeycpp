@@ -85,4 +85,7 @@ target_link_libraries(evaluator_test
 
 add_test(NAME lexer_test COMMAND lexer_test)
 add_test(NAME parser_test COMMAND parser_test)
-add_test(NAME evaluator_test COMMAND evaluator_test) 
+add_test(NAME evaluator_test COMMAND evaluator_test)
+
+# 既存の設定に追加
+target_compile_features(monkey PRIVATE cxx_std_17) 

@@ -187,27 +187,20 @@ namespace monkey
 
   std::string Hash::inspect() const
   {
-    std::stringstream ss;
-    ss << "{";
+    std::string result = "{";
     bool first = true;
-    for (const auto &pair : pairs)
-    {
-      if (!first)
-      {
-        ss << ", ";
-      }
-      if (pair.second.key && pair.second.value)
-      {
-        ss << pair.second.key->inspect() << ": " << pair.second.value->inspect();
-      }
-      first = false;
+    for (const auto& pair : pairs) {
+        if (!first) {
+            result += ", ";
+        }
+        first = false;
+        result += pair.second.key->inspect();
+        result += ": ";
+        result += pair.second.value->inspect();
     }
-    ss << "}";
-    return ss.str();
+    result += "}";
+    return result;
   }
-
-  // HashPair implementation
-  HashPair::HashPair(ObjectPtr k, ObjectPtr v) : key(std::move(k)), value(std::move(v)) {}
 
   // Environment implementation
   EnvPtr Environment::NewEnvironment()

@@ -68,6 +68,15 @@ namespace monkey
     ObjectPtr evalArrayLiteral(const AST::ArrayLiteral* array);
     ObjectPtr evalIndexExpression(const AST::IndexExpression* indexExpr);
     ObjectPtr evalArrayIndexExpression(const ObjectPtr& array, const ObjectPtr& index);
+
+    // ハッシュリテラルの評価
+    ObjectPtr EvalHashLiteral(const AST::HashLiteral* node, EnvPtr env);
+    ObjectPtr EvalHashIndexExpression(ObjectPtr hash, ObjectPtr index);
+
+    // ハッシュ関連の評価メソッド
+    ObjectPtr evalHashLiteral(const AST::HashLiteral* node);
+    ObjectPtr evalHashIndexExpression(const ObjectPtr& hash, const ObjectPtr& index);
+    ObjectPtr evalIndexExpression(const ObjectPtr& left, const ObjectPtr& index);
   };
 
 } // namespace monkey
