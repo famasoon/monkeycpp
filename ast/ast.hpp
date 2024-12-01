@@ -38,24 +38,8 @@ namespace AST
   public:
     std::vector<std::unique_ptr<Statement>> statements;
 
-    std::string TokenLiteral() const override
-    {
-      if (!statements.empty())
-      {
-        return statements[0]->TokenLiteral();
-      }
-      return "";
-    }
-
-    std::string String() const override
-    {
-      std::string result;
-      for (const auto &stmt : statements)
-      {
-        result += stmt->String();
-      }
-      return result;
-    }
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
   // 識別子を表すクラス
@@ -65,12 +49,11 @@ namespace AST
     Token::Token token;
     std::string value;
 
-    Identifier(Token::Token token, std::string value)
-        : token(std::move(token)), value(std::move(value)) {}
+    Identifier(Token::Token token, std::string value);
 
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override { return value; }
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
   // let文を表すクラス
@@ -81,26 +64,11 @@ namespace AST
     std::unique_ptr<Identifier> name;
     std::unique_ptr<Expression> value;
 
-    LetStatement(Token::Token token)
-        : token(std::move(token)) {}
+    LetStatement(Token::Token token);
 
-    void statementNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      std::string result = TokenLiteral() + " ";
-      if (name)
-      {
-        result += name->String();
-      }
-      result += " = ";
-      if (value)
-      {
-        result += value->String();
-      }
-      result += ";";
-      return result;
-    }
+    void statementNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
   // return文を表すクラス
@@ -110,21 +78,11 @@ namespace AST
     Token::Token token;
     std::unique_ptr<Expression> returnValue;
 
-    ReturnStatement(Token::Token token)
-        : token(std::move(token)) {}
+    ReturnStatement(Token::Token token);
 
-    void statementNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      std::string result = TokenLiteral() + " ";
-      if (returnValue)
-      {
-        result += returnValue->String();
-      }
-      result += ";";
-      return result;
-    }
+    void statementNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
   // 式文を表すクラス
@@ -134,19 +92,11 @@ namespace AST
     Token::Token token;
     std::unique_ptr<Expression> expression;
 
-    ExpressionStatement(Token::Token token)
-        : token(std::move(token)) {}
+    ExpressionStatement(Token::Token token);
 
-    void statementNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      if (expression)
-      {
-        return expression->String();
-      }
-      return "";
-    }
+    void statementNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
 } // namespace AST

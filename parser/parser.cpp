@@ -135,7 +135,7 @@ namespace Parser
     return stmt;
   }
 
-  std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
+  std::unique_ptr<AST::Expression> Parser::parseExpression([[maybe_unused]] Precedence precedence)
   {
     // 現時点では識別子のみをパースする
     switch (curToken.type)
