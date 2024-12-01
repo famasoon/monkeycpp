@@ -11,9 +11,18 @@ namespace monkey
   class Evaluator
   {
   public:
+    Evaluator() : env(Environment::NewEnvironment()) {}
+
     ObjectPtr eval(const AST::Node *node);
+    void collectGarbage()
+    {
+      if (env)
+        env->MarkAndSweep();
+    }
 
   private:
+    EnvPtr env; // 評価器の環境
+
     // プログラムと式の評価
     ObjectPtr evalProgram(const AST::Program *program);
     ObjectPtr evalPrefixExpression(const AST::PrefixExpression *expr);

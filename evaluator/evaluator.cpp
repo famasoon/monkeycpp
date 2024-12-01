@@ -329,7 +329,7 @@ namespace monkey
       }
     }
 
-    return std::make_shared<Function>(params, node->body.get(), nullptr);
+    return std::make_shared<Function>(params, node->body.get(), env);
   }
 
   ObjectPtr Evaluator::evalIdentifier(const AST::Identifier *node)
@@ -338,7 +338,13 @@ namespace monkey
     {
       return std::make_shared<Null>();
     }
-    return std::make_shared<String>(node->value); // 簡単な実装として文字列として評価
+
+    if (auto obj = env->Get(node->value))
+    {
+      return obj;
+    }
+
+    return newError("identifier not found: " + node->value);
   }
 
   ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement *block)
@@ -353,7 +359,7 @@ namespace monkey
     {
       if (!stmt)
         continue;
-      
+
       result = eval(stmt.get());
       if (isError(result))
       {
@@ -365,7 +371,7 @@ namespace monkey
 
   ObjectPtr Evaluator::evalLetStatement(const AST::LetStatement *letStmt)
   {
-    if (!letStmt || !letStmt->value)
+    if (!letStmt || !letStmt->value || !letStmt->name)
     {
       return std::make_shared<Null>();
     }
@@ -376,7 +382,7 @@ namespace monkey
       return value;
     }
 
-    return value;
+    return env->Set(letStmt->name->value, value);
   }
 
   ObjectPtr Evaluator::evalReturnStatement(const AST::ReturnStatement *returnStmt)
@@ -413,7 +419,7 @@ namespace monkey
     {
       if (!arg)
         continue;
-      
+
       auto evaluated = eval(arg.get());
       if (isError(evaluated))
       {
@@ -424,18 +430,26 @@ namespace monkey
 
     if (auto fn = std::dynamic_pointer_cast<Function>(function))
     {
-      // 関数呼び出しの実装（環境の設定なども必要）
-      return std::make_shared<Null>(); // 仮の実装
+      auto newEnv = Environment::NewEnclosedEnvironment(fn->env);
+
+      for (size_t i = 0; i < fn->parameters.size() && i < args.size(); i++)
+      {
+        newEnv->Set(fn->parameters[i], args[i]);
+      }
+
+      auto evaluator = Evaluator();
+      evaluator.env = newEnv;
+      return evaluator.eval(fn->body);
     }
 
     return newError("not a function: " + objectTypeToString(function->type()));
   }
 
-  ObjectPtr Evaluator::evalExpressionStatement(const AST::ExpressionStatement* exprStmt)
+  ObjectPtr Evaluator::evalExpressionStatement(const AST::ExpressionStatement *exprStmt)
   {
     if (!exprStmt || !exprStmt->expression)
     {
-        return std::make_shared<Null>();
+      return std::make_shared<Null>();
     }
     return eval(exprStmt->expression.get());
   }
