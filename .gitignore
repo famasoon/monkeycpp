@@ -1,1 +1,12 @@
+# 実行ファイル
+monkey
+
+# コンパイル成果物
+*.o
+*.d
+
+# VSCode設定
 .vscode/
+
+# macOS
+.DS_Store
