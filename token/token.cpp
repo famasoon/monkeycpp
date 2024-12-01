@@ -16,37 +16,37 @@ namespace Token
     case TokenType::INT:
       return "INT";
     case TokenType::ASSIGN:
-      return "=";
+      return "ASSIGN";
     case TokenType::PLUS:
-      return "+";
+      return "PLUS";
     case TokenType::MINUS:
-      return "-";
+      return "MINUS";
     case TokenType::BANG:
-      return "!";
+      return "BANG";
     case TokenType::ASTERISK:
-      return "*";
+      return "ASTERISK";
     case TokenType::SLASH:
-      return "/";
+      return "SLASH";
     case TokenType::LT:
-      return "<";
+      return "LT";
     case TokenType::GT:
-      return ">";
+      return "GT";
     case TokenType::EQ:
-      return "==";
+      return "EQ";
     case TokenType::NOT_EQ:
-      return "!=";
+      return "NOT_EQ";
     case TokenType::COMMA:
-      return ",";
+      return "COMMA";
     case TokenType::SEMICOLON:
-      return ";";
+      return "SEMICOLON";
     case TokenType::LPAREN:
-      return "(";
+      return "LPAREN";
     case TokenType::RPAREN:
-      return ")";
+      return "RPAREN";
     case TokenType::LBRACE:
-      return "{";
+      return "LBRACE";
     case TokenType::RBRACE:
-      return "}";
+      return "RBRACE";
     case TokenType::FUNCTION:
       return "FUNCTION";
     case TokenType::LET:

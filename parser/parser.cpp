@@ -91,6 +91,10 @@ namespace Parser
     }
 
     auto leftExp = prefix->second();
+    if (!leftExp)
+    {
+      return nullptr;
+    }
 
     while (!peekTokenIs(Token::TokenType::SEMICOLON) && precedence < peekPrecedence())
     {
@@ -131,6 +135,12 @@ namespace Parser
     nextToken();
 
     expression->right = parseExpression(Precedence::PREFIX);
+    if (!expression->right)
+    {
+        registerError("Could not parse expression for prefix operator");
+        return nullptr;
+    }
+
     return expression;
   }
 
@@ -143,7 +153,13 @@ namespace Parser
 
     auto precedence = curPrecedence();
     nextToken();
+
     expression->right = parseExpression(precedence);
+    if (!expression->right)
+    {
+        registerError("Could not parse right side of infix expression");
+        return nullptr;
+    }
 
     return expression;
   }
@@ -223,21 +239,31 @@ namespace Parser
 
     if (!expectPeek(Token::TokenType::IDENT))
     {
-      return nullptr;
+        return nullptr;
     }
 
     stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.literal);
 
     if (!expectPeek(Token::TokenType::ASSIGN))
     {
-      return nullptr;
+        return nullptr;
     }
 
-    // TODO: セミコロンまでの式をスキップする
-    while (!curTokenIs(Token::TokenType::SEMICOLON))
+    nextToken(); // ASSIGN の次のトークンに移動
+
+    // 式をパースする
+    stmt->value = parseExpression(Precedence::LOWEST);
+    if (!stmt->value)
     {
-      nextToken();
+        return nullptr;
     }
+
+    if (!peekTokenIs(Token::TokenType::SEMICOLON))
+    {
+        registerError("Expected semicolon after let statement");
+        return nullptr;
+    }
+    nextToken();
 
     return stmt;
   }
@@ -248,10 +274,18 @@ namespace Parser
 
     nextToken();
 
-    // TODO: セミコロンまでの式をスキップする
-    while (!curTokenIs(Token::TokenType::SEMICOLON))
+    // 式をパースする
+    stmt->returnValue = parseExpression(Precedence::LOWEST);
+    if (!stmt->returnValue)
     {
-      nextToken();
+        registerError("Failed to parse return value");
+        return nullptr;
+    }
+
+    // セミコロンは省略可���
+    if (peekTokenIs(Token::TokenType::SEMICOLON))
+    {
+        nextToken();
     }
 
     return stmt;
@@ -262,30 +296,29 @@ namespace Parser
     auto stmt = std::make_unique<AST::ExpressionStatement>(curToken);
 
     stmt->expression = parseExpression(Precedence::LOWEST);
+    if (!stmt->expression)
+    {
+        return nullptr;
+    }
 
+    // セミコロンは省略可能
     if (peekTokenIs(Token::TokenType::SEMICOLON))
     {
-      nextToken();
+        nextToken();
     }
 
     return stmt;
   }
 
-  std::unique_ptr<AST::Expression> Parser::parseExpression([[maybe_unused]] Precedence precedence)
-  {
-    // 現時点では識別子のみをパースする
-    switch (curToken.type)
-    {
-    case Token::TokenType::IDENT:
-      return parseIdentifier();
-    default:
-      return nullptr;
-    }
-  }
-
   std::unique_ptr<AST::Expression> Parser::parseIdentifier()
   {
     return std::make_unique<AST::Identifier>(curToken, curToken.literal);
+  }
+
+  void Parser::noPrefixParseFnError(Token::TokenType t)
+  {
+    std::string msg = "no prefix parse function for " + Token::toString(t) + " found";
+    errors.push_back(msg);
   }
 
 } // namespace Parser

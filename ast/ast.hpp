@@ -107,6 +107,7 @@ namespace AST
     IntegerLiteral(Token::Token token, int64_t value)
         : token(std::move(token)), value(value) {}
 
+    void expressionNode() override {}
     std::string TokenLiteral() const override { return token.literal; }
     std::string String() const override { return token.literal; }
   };
@@ -120,13 +121,10 @@ namespace AST
     PrefixExpression(Token::Token token, std::string op)
         : token(std::move(token)), op(std::move(op)) {}
 
+    void expressionNode() override {}
     std::string TokenLiteral() const override { return token.literal; }
     std::string String() const override {
-        std::string out = "(";
-        out += op;
-        out += right->String();
-        out += ")";
-        return out;
+        return "(" + op + right->String() + ")";
     }
   };
 
@@ -140,14 +138,10 @@ namespace AST
     InfixExpression(Token::Token token, std::string op, std::unique_ptr<Expression> left)
         : token(std::move(token)), op(std::move(op)), left(std::move(left)) {}
 
+    void expressionNode() override {}
     std::string TokenLiteral() const override { return token.literal; }
     std::string String() const override {
-        std::string out = "(";
-        out += left->String();
-        out += " " + op + " ";
-        out += right->String();
-        out += ")";
-        return out;
+        return "(" + left->String() + op + right->String() + ")";
     }
   };
 

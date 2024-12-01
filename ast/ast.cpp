@@ -14,12 +14,16 @@ namespace AST
 
   std::string Program::String() const
   {
-    std::string result;
-    for (const auto &stmt : statements)
+    std::string out;
+    for (size_t i = 0; i < statements.size(); i++)
     {
-      result += stmt->String();
+        if (!statements[i]) continue;  // nullチェック
+        
+        out += statements[i]->String();
+        
+        // セミコロンは追加しない（各文の実装で必要に応じて追加する）
     }
-    return result;
+    return out;
   }
 
   // Identifier implementation
@@ -100,10 +104,9 @@ namespace AST
 
   std::string ExpressionStatement::String() const
   {
-    if (expression)
-    {
-      return expression->String();
-    }
-    return "";
+    if (!expression) return "";
+    
+    // セミコロンを含めない文字列表現を返す
+    return expression->String();
   }
 } // namespace AST
