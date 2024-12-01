@@ -1,6 +1,6 @@
 #include <string>
 
-namespace monkey
+namespace token
 {
   const std::string ILLEGAL = "ILLEGAL";
   const std::string EOF_ = "EOF";
