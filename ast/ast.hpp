@@ -256,4 +256,14 @@ namespace AST
     }
   };
 
+  class StringLiteral : public Expression
+  {
+  public:
+    std::string value;
+
+    StringLiteral(const std::string &v) : value(v) {}
+    std::string TokenLiteral() const override { return value; }
+    std::string String() const override { return value; }
+  };
+
 } // namespace AST
