@@ -137,8 +137,8 @@ namespace Parser
     expression->right = parseExpression(Precedence::PREFIX);
     if (!expression->right)
     {
-        registerError("Could not parse expression for prefix operator");
-        return nullptr;
+      registerError("Could not parse expression for prefix operator");
+      return nullptr;
     }
 
     return expression;
@@ -157,8 +157,8 @@ namespace Parser
     expression->right = parseExpression(precedence);
     if (!expression->right)
     {
-        registerError("Could not parse right side of infix expression");
-        return nullptr;
+      registerError("Could not parse right side of infix expression");
+      return nullptr;
     }
 
     return expression;
@@ -239,14 +239,14 @@ namespace Parser
 
     if (!expectPeek(Token::TokenType::IDENT))
     {
-        return nullptr;
+      return nullptr;
     }
 
     stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.literal);
 
     if (!expectPeek(Token::TokenType::ASSIGN))
     {
-        return nullptr;
+      return nullptr;
     }
 
     nextToken(); // ASSIGN の次のトークンに移動
@@ -255,13 +255,13 @@ namespace Parser
     stmt->value = parseExpression(Precedence::LOWEST);
     if (!stmt->value)
     {
-        return nullptr;
+      return nullptr;
     }
 
     if (!peekTokenIs(Token::TokenType::SEMICOLON))
     {
-        registerError("Expected semicolon after let statement");
-        return nullptr;
+      registerError("Expected semicolon after let statement");
+      return nullptr;
     }
     nextToken();
 
@@ -278,14 +278,14 @@ namespace Parser
     stmt->returnValue = parseExpression(Precedence::LOWEST);
     if (!stmt->returnValue)
     {
-        registerError("Failed to parse return value");
-        return nullptr;
+      registerError("Failed to parse return value");
+      return nullptr;
     }
 
     // セミコロンは省略可���
     if (peekTokenIs(Token::TokenType::SEMICOLON))
     {
-        nextToken();
+      nextToken();
     }
 
     return stmt;
@@ -298,13 +298,13 @@ namespace Parser
     stmt->expression = parseExpression(Precedence::LOWEST);
     if (!stmt->expression)
     {
-        return nullptr;
+      return nullptr;
     }
 
     // セミコロンは省略可能
     if (peekTokenIs(Token::TokenType::SEMICOLON))
     {
-        nextToken();
+      nextToken();
     }
 
     return stmt;
