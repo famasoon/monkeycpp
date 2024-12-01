@@ -15,6 +15,10 @@ namespace monkey
     EnvPtr getEnv() const { return env; }
     void setEnv(EnvPtr newEnv) { env = std::move(newEnv); }
 
+    // エラーハンドリング
+    ObjectPtr newError(const std::string &message);
+    static std::string objectTypeToString(ObjectType type);
+
   private:
     EnvPtr env;
 
@@ -59,10 +63,6 @@ namespace monkey
         const std::string &op,
         const std::shared_ptr<String> &left,
         const std::shared_ptr<String> &right);
-
-    // エラーハンドリング
-    ObjectPtr newError(const std::string &message);
-    std::string objectTypeToString(ObjectType type);
 
     // 配列関連の評価
     ObjectPtr evalArrayLiteral(const AST::ArrayLiteral* array);

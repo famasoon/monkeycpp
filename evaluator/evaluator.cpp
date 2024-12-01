@@ -11,6 +11,9 @@ namespace monkey
     constexpr size_t GC_THRESHOLD = 1000; // ガベージコレクションのしきい値
     size_t allocatedObjects = 0;          // 割り当てられたオブジェクトの数
 
+    // objectTypeToString関数の前方宣言
+    std::string objectTypeToString(ObjectType type);
+
     // デバッグ出力用のヘルパー関数
     void debugPrint(const std::string &message)
     {
@@ -31,6 +34,124 @@ namespace monkey
     {
       allocatedObjects++;
       debugPrint("Allocated objects: " + std::to_string(allocatedObjects));
+    }
+
+    // 配列用の組み込み関数
+    ObjectPtr builtinLen(const std::vector<ObjectPtr>& args) {
+        if (args.size() != 1) {
+            return std::make_shared<Error>("wrong number of arguments. got=" + 
+                std::to_string(args.size()) + ", want=1");
+        }
+
+        if (auto array = std::dynamic_pointer_cast<Array>(args[0])) {
+            return std::make_shared<Integer>(array->elements.size());
+        }
+
+        return std::make_shared<Error>("argument to `len` not supported, got " + 
+            objectTypeToString(args[0]->type()));
+    }
+
+    ObjectPtr builtinFirst(const std::vector<ObjectPtr>& args) {
+        if (args.size() != 1) {
+            return std::make_shared<Error>("wrong number of arguments. got=" + 
+                std::to_string(args.size()) + ", want=1");
+        }
+
+        auto array = std::dynamic_pointer_cast<Array>(args[0]);
+        if (!array) {
+            return std::make_shared<Error>("argument to `first` must be ARRAY, got " + 
+                objectTypeToString(args[0]->type()));
+        }
+
+        if (array->elements.empty()) {
+            return std::make_shared<Null>();
+        }
+
+        return array->elements[0];
+    }
+
+    ObjectPtr builtinLast(const std::vector<ObjectPtr>& args) {
+        if (args.size() != 1) {
+            return std::make_shared<Error>("wrong number of arguments. got=" + 
+                std::to_string(args.size()) + ", want=1");
+        }
+
+        auto array = std::dynamic_pointer_cast<Array>(args[0]);
+        if (!array) {
+            return std::make_shared<Error>("argument to `last` must be ARRAY, got " + 
+                objectTypeToString(args[0]->type()));
+        }
+
+        if (array->elements.empty()) {
+            return std::make_shared<Null>();
+        }
+
+        return array->elements.back();
+    }
+
+    ObjectPtr builtinRest(const std::vector<ObjectPtr>& args) {
+        if (args.size() != 1) {
+            return std::make_shared<Error>("wrong number of arguments. got=" + 
+                std::to_string(args.size()) + ", want=1");
+        }
+
+        auto array = std::dynamic_pointer_cast<Array>(args[0]);
+        if (!array) {
+            return std::make_shared<Error>("argument to `rest` must be ARRAY, got " + 
+                objectTypeToString(args[0]->type()));
+        }
+
+        if (array->elements.empty()) {
+            return std::make_shared<Null>();
+        }
+
+        std::vector<ObjectPtr> newElements(array->elements.begin() + 1, array->elements.end());
+        return std::make_shared<Array>(std::move(newElements));
+    }
+
+    ObjectPtr builtinPush(const std::vector<ObjectPtr>& args) {
+        if (args.size() != 2) {
+            return std::make_shared<Error>("wrong number of arguments. got=" + 
+                std::to_string(args.size()) + ", want=2");
+        }
+
+        auto array = std::dynamic_pointer_cast<Array>(args[0]);
+        if (!array) {
+            return std::make_shared<Error>("argument to `push` must be ARRAY, got " + 
+                objectTypeToString(args[0]->type()));
+        }
+
+        std::vector<ObjectPtr> newElements = array->elements;
+        newElements.push_back(args[1]);
+        return std::make_shared<Array>(std::move(newElements));
+    }
+
+    // objectTypeToString関数の実装
+    std::string objectTypeToString(ObjectType type) {
+        switch (type) {
+        case ObjectType::INTEGER:
+            return "INTEGER";
+        case ObjectType::BOOLEAN:
+            return "BOOLEAN";
+        case ObjectType::STRING:
+            return "STRING";
+        case ObjectType::NULL_OBJ:
+            return "NULL";
+        case ObjectType::ERROR:
+            return "ERROR";
+        case ObjectType::ARRAY:
+            return "ARRAY";
+        case ObjectType::HASH:
+            return "HASH";
+        case ObjectType::FUNCTION:
+            return "FUNCTION";
+        case ObjectType::BUILTIN:
+            return "BUILTIN";
+        case ObjectType::RETURN_VALUE:
+            return "RETURN_VALUE";
+        default:
+            return "UNKNOWN";
+        }
     }
   }
 
@@ -207,7 +328,7 @@ namespace monkey
       return evalBooleanInfixExpression(op, leftBool, std::dynamic_pointer_cast<Boolean>(right));
     }
 
-    // ���字列演算
+    // 字列演算
     std::shared_ptr<String> leftStr = std::dynamic_pointer_cast<String>(left);
     if (leftStr)
     {
@@ -311,25 +432,6 @@ namespace monkey
       return std::make_shared<Boolean>(true);
     }
     return std::make_shared<Boolean>(false);
-  }
-
-  std::string Evaluator::objectTypeToString(ObjectType type)
-  {
-    switch (type)
-    {
-    case ObjectType::INTEGER:
-      return "INTEGER";
-    case ObjectType::BOOLEAN:
-      return "BOOLEAN";
-    case ObjectType::STRING:
-      return "STRING";
-    case ObjectType::NULL_OBJ:
-      return "NULL";
-    case ObjectType::ERROR:
-      return "ERROR";
-    default:
-      return "UNKNOWN";
-    }
   }
 
   ObjectPtr Evaluator::newError(const std::string &message)
@@ -483,7 +585,13 @@ namespace monkey
     return eval(exprStmt->expression.get());
   }
 
-  Evaluator::Evaluator() : env(Environment::NewEnvironment()) {}
+  Evaluator::Evaluator() : env(Environment::NewEnvironment()) {
+    env->Set("len", std::make_shared<Builtin>(builtinLen));
+    env->Set("first", std::make_shared<Builtin>(builtinFirst));
+    env->Set("last", std::make_shared<Builtin>(builtinLast));
+    env->Set("rest", std::make_shared<Builtin>(builtinRest));
+    env->Set("push", std::make_shared<Builtin>(builtinPush));
+  }
 
   void Evaluator::collectGarbage() {
     if (env) {
@@ -553,6 +661,33 @@ namespace monkey
     }
 
     return arrayObj->elements[idx];
+  }
+
+  std::string Evaluator::objectTypeToString(ObjectType type) {
+    switch (type) {
+      case ObjectType::INTEGER:
+        return "INTEGER";
+      case ObjectType::BOOLEAN:
+        return "BOOLEAN";
+      case ObjectType::STRING:
+        return "STRING";
+      case ObjectType::NULL_OBJ:
+        return "NULL";
+      case ObjectType::ERROR:
+        return "ERROR";
+      case ObjectType::ARRAY:
+        return "ARRAY";
+      case ObjectType::HASH:
+        return "HASH";
+      case ObjectType::FUNCTION:
+        return "FUNCTION";
+      case ObjectType::BUILTIN:
+        return "BUILTIN";
+      case ObjectType::RETURN_VALUE:
+        return "RETURN_VALUE";
+      default:
+        return "UNKNOWN";
+    }
   }
 
 } // namespace monkey
