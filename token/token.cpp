@@ -103,4 +103,27 @@ namespace Token
   const std::string Token::LBRACKET = "[";
   const std::string Token::RBRACKET = "]";
 
+  Token::Token(TokenType type, std::string literal)
+      : type(type), literal(std::move(literal)) {}
+
+  bool Token::operator==(const Token &other) const {
+      return type == other.type && literal == other.literal;
+  }
+
+  bool Token::operator==(const TokenType &other) const {
+      return type == other;
+  }
+
+  bool Token::operator!=(const Token &other) const {
+      return !(*this == other);
+  }
+
+  bool Token::operator!=(const TokenType &other) const {
+      return type != other;
+  }
+
+  std::string Token::getType() const {
+      return toString(type);
+  }
+
 } // namespace Token

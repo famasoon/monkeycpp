@@ -312,4 +312,18 @@ namespace monkey
     }
   }
 
+  // Function implementation
+  Function::Function(std::vector<std::string> params, const AST::BlockStatement* b, EnvPtr e)
+      : parameters(std::move(params))
+      , body(b)
+      , env(std::move(e)) {}
+
+  Function::~Function() {
+      delete body;
+  }
+
+  ObjectType Function::type() const {
+      return ObjectType::FUNCTION;
+  }
+
 } // namespace monkey

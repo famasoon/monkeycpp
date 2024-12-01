@@ -12,8 +12,8 @@ namespace monkey
     Evaluator();
     ObjectPtr eval(const AST::Node *node);
     void collectGarbage();
-    EnvPtr getEnv() const { return env; }
-    void setEnv(EnvPtr newEnv) { env = std::move(newEnv); }
+    EnvPtr getEnv() const;
+    void setEnv(EnvPtr newEnv);
 
     // エラーハンドリング
     ObjectPtr newError(const std::string &message);

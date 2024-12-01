@@ -37,49 +37,32 @@ namespace AST
     virtual Expression* clone() const = 0;
   };
 
-  // 式文を先に定義
-  class ExpressionStatement : public Statement
-  {
+  // 式文
+  class ExpressionStatement : public Statement {
   public:
     Token::Token token;
     std::unique_ptr<Expression> expression;
 
     explicit ExpressionStatement(Token::Token token);
-    ExpressionStatement(const ExpressionStatement& other)
-        : token(other.token)
-        , expression(other.expression ? std::unique_ptr<Expression>(other.expression->clone()) : nullptr) {}
-    
+    ExpressionStatement(const ExpressionStatement& other);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override {
-        return new ExpressionStatement(*this);
-    }
+    Statement* clone() const override;
   };
 
   // ブロック文
-  class BlockStatement : public Statement
-  {
+  class BlockStatement : public Statement {
   public:
     Token::Token token;
     std::vector<std::unique_ptr<Statement>> statements;
 
     explicit BlockStatement(Token::Token token);
-    BlockStatement(const BlockStatement& other) : token(other.token) {
-        statements.reserve(other.statements.size());
-        for (const auto& stmt : other.statements) {
-            if (stmt) {
-                statements.push_back(std::unique_ptr<Statement>(stmt->clone()));
-            }
-        }
-    }
-    
+    BlockStatement(const BlockStatement& other);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override {
-        return new BlockStatement(*this);
-    }
+    Statement* clone() const override;
   };
 
   // プログラム全体を表すクラス（Statementクラスの後に移動）
@@ -103,9 +86,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        return new Identifier(token, value);
-    }
+    Expression* clone() const override;
   };
 
   // let文
@@ -120,16 +101,7 @@ namespace AST
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override {
-        auto cloned = new LetStatement(token);
-        if (name) {
-            cloned->name.reset(static_cast<Identifier*>(name->clone()));
-        }
-        if (value) {
-            cloned->value.reset(value->clone());
-        }
-        return cloned;
-    }
+    Statement* clone() const override;
   };
 
   // return文
@@ -143,13 +115,7 @@ namespace AST
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override {
-        auto cloned = new ReturnStatement(token);
-        if (returnValue) {
-            cloned->returnValue.reset(returnValue->clone());
-        }
-        return cloned;
-    }
+    Statement* clone() const override;
   };
 
   // 整数リテラル
@@ -163,9 +129,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        return new IntegerLiteral(token, value);
-    }
+    Expression* clone() const override;
   };
 
   // 前置式
@@ -210,9 +174,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        return new BooleanLiteral(token, value);
-    }
+    Expression* clone() const override;
   };
 
   // 関数リテラル
@@ -227,19 +189,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        auto cloned = new FunctionLiteral(token);
-        for (const auto& param : parameters) {
-            if (param) {
-                cloned->parameters.push_back(std::unique_ptr<Identifier>(
-                    static_cast<Identifier*>(param->clone())));
-            }
-        }
-        if (body) {
-            cloned->body.reset(static_cast<BlockStatement*>(body->clone()));
-        }
-        return cloned;
-    }
+    Expression* clone() const override;
   };
 
   // 呼び出し式
@@ -254,18 +204,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        auto cloned = new CallExpression(token, nullptr);
-        if (function) {
-            cloned->function.reset(function->clone());
-        }
-        for (const auto& arg : arguments) {
-            if (arg) {
-                cloned->arguments.push_back(std::unique_ptr<Expression>(arg->clone()));
-            }
-        }
-        return cloned;
-    }
+    Expression* clone() const override;
   };
 
   // 文字列リテラル
@@ -282,9 +221,7 @@ namespace AST
     std::string String() const override;
     
     const std::string& getValue() const { return value; }
-    Expression* clone() const override {
-        return new StringLiteral(token, value);
-    }
+    Expression* clone() const override;
   };
 
   // 配列リテラル
@@ -297,15 +234,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        auto cloned = new ArrayLiteral(token);
-        for (const auto& elem : elements) {
-            if (elem) {
-                cloned->elements.push_back(std::unique_ptr<Expression>(elem->clone()));
-            }
-        }
-        return cloned;
-    }
+    Expression* clone() const override;
   };
 
   // インデックス式
@@ -319,16 +248,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        auto cloned = new IndexExpression(token, nullptr);
-        if (left) {
-            cloned->left.reset(left->clone());
-        }
-        if (index) {
-            cloned->index.reset(index->clone());
-        }
-        return cloned;
-    }
+    Expression* clone() const override;
   };
 
   // ハッシュリテラル
@@ -341,16 +261,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override {
-        auto cloned = new HashLiteral(token);
-        for (const auto& pair : pairs) {
-            if (pair.first && pair.second) {
-                cloned->pairs[std::unique_ptr<Expression>(pair.first->clone())] = 
-                    std::unique_ptr<Expression>(pair.second->clone());
-            }
-        }
-        return cloned;
-    }
+    Expression* clone() const override;
   };
 
 } // namespace AST

@@ -61,6 +61,10 @@ namespace AST
     return value;
   }
 
+  Expression* Identifier::clone() const {
+      return new Identifier(token, value);
+  }
+
   // LetStatement implementation
   LetStatement::LetStatement(Token::Token token)
       : token(std::move(token)) {}
@@ -88,6 +92,17 @@ namespace AST
     return out;
   }
 
+  Statement* LetStatement::clone() const {
+      auto cloned = new LetStatement(token);
+      if (name) {
+          cloned->name.reset(static_cast<Identifier*>(name->clone()));
+      }
+      if (value) {
+          cloned->value.reset(value->clone());
+      }
+      return cloned;
+  }
+
   // ReturnStatement implementation
   ReturnStatement::ReturnStatement(Token::Token token)
       : token(std::move(token)) {}
@@ -108,6 +123,14 @@ namespace AST
     }
     out += ";";
     return out;
+  }
+
+  Statement* ReturnStatement::clone() const {
+      auto cloned = new ReturnStatement(token);
+      if (returnValue) {
+          cloned->returnValue.reset(returnValue->clone());
+      }
+      return cloned;
   }
 
   // ExpressionStatement implementation
@@ -140,6 +163,10 @@ namespace AST
   std::string IntegerLiteral::String() const
   {
     return token.literal;
+  }
+
+  Expression* IntegerLiteral::clone() const {
+      return new IntegerLiteral(token, value);
   }
 
   // PrefixExpression implementation
@@ -220,6 +247,10 @@ namespace AST
     return token.literal;
   }
 
+  Expression* BooleanLiteral::clone() const {
+      return new BooleanLiteral(token, value);
+  }
+
   // FunctionLiteral implementation
   FunctionLiteral::FunctionLiteral(Token::Token token)
       : token(std::move(token)) {}
@@ -250,6 +281,20 @@ namespace AST
     return out;
   }
 
+  Expression* FunctionLiteral::clone() const {
+      auto cloned = new FunctionLiteral(token);
+      for (const auto& param : parameters) {
+          if (param) {
+              cloned->parameters.push_back(std::unique_ptr<Identifier>(
+                  static_cast<Identifier*>(param->clone())));
+          }
+      }
+      if (body) {
+          cloned->body.reset(static_cast<BlockStatement*>(body->clone()));
+      }
+      return cloned;
+  }
+
   // CallExpression implementation
   CallExpression::CallExpression(Token::Token token, std::unique_ptr<Expression> function)
       : token(std::move(token)), function(std::move(function)) {}
@@ -276,6 +321,19 @@ namespace AST
     return out;
   }
 
+  Expression* CallExpression::clone() const {
+      auto cloned = new CallExpression(token, nullptr);
+      if (function) {
+          cloned->function.reset(function->clone());
+      }
+      for (const auto& arg : arguments) {
+          if (arg) {
+              cloned->arguments.push_back(std::unique_ptr<Expression>(arg->clone()));
+          }
+      }
+      return cloned;
+  }
+
   // StringLiteral implementation
   StringLiteral::StringLiteral(Token::Token token, std::string value)
       : token(std::move(token)), value(std::move(value)) {}
@@ -290,6 +348,10 @@ namespace AST
   std::string StringLiteral::String() const
   {
     return "\"" + value + "\"";
+  }
+
+  Expression* StringLiteral::clone() const {
+      return new StringLiteral(token, value);
   }
 
   // ArrayLiteral実装
@@ -315,6 +377,16 @@ namespace AST
       return out;
   }
 
+  Expression* ArrayLiteral::clone() const {
+      auto cloned = new ArrayLiteral(token);
+      for (const auto& elem : elements) {
+          if (elem) {
+              cloned->elements.push_back(std::unique_ptr<Expression>(elem->clone()));
+          }
+      }
+      return cloned;
+  }
+
   // IndexExpression実装
   IndexExpression::IndexExpression(Token::Token token, std::unique_ptr<Expression> left)
       : token(std::move(token)), left(std::move(left)) {}
@@ -327,6 +399,17 @@ namespace AST
 
   std::string IndexExpression::String() const {
       return "(" + left->String() + "[" + index->String() + "])";
+  }
+
+  Expression* IndexExpression::clone() const {
+      auto cloned = new IndexExpression(token, nullptr);
+      if (left) {
+          cloned->left.reset(left->clone());
+      }
+      if (index) {
+          cloned->index.reset(index->clone());
+      }
+      return cloned;
   }
 
   // HashLiteral実装
@@ -359,5 +442,53 @@ namespace AST
       
       result += "}";
       return result;
+  }
+
+  Expression* HashLiteral::clone() const {
+      auto cloned = new HashLiteral(token);
+      for (const auto& pair : pairs) {
+          if (pair.first && pair.second) {
+              cloned->pairs[std::unique_ptr<Expression>(pair.first->clone())] = 
+                  std::unique_ptr<Expression>(pair.second->clone());
+          }
+      }
+      return cloned;
+  }
+
+  // ExpressionStatementのコピーコンストラクタ実装
+  ExpressionStatement::ExpressionStatement(const ExpressionStatement& other)
+      : token(other.token)
+      , expression(other.expression ? std::unique_ptr<Expression>(other.expression->clone()) : nullptr) {}
+
+  // BlockStatementのコピーコンストラクタ実装
+  BlockStatement::BlockStatement(const BlockStatement& other) 
+      : token(other.token) {
+      statements.reserve(other.statements.size());
+      for (const auto& stmt : other.statements) {
+          if (stmt) {
+              statements.push_back(std::unique_ptr<Statement>(stmt->clone()));
+          }
+      }
+  }
+
+  // ExpressionStatementのclone実装
+  Statement* ExpressionStatement::clone() const {
+      auto cloned = new ExpressionStatement(token);
+      if (expression) {
+          cloned->expression.reset(expression->clone());
+      }
+      return cloned;
+  }
+
+  // BlockStatementのclone実装
+  Statement* BlockStatement::clone() const {
+      auto cloned = new BlockStatement(token);
+      cloned->statements.reserve(statements.size());
+      for (const auto& stmt : statements) {
+          if (stmt) {
+              cloned->statements.push_back(std::unique_ptr<Statement>(stmt->clone()));
+          }
+      }
+      return cloned;
   }
 } // namespace AST

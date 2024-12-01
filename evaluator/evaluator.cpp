@@ -906,4 +906,12 @@ namespace monkey
     return pair->second.value;
   }
 
+  EnvPtr Evaluator::getEnv() const {
+    return env;
+  }
+
+  void Evaluator::setEnv(EnvPtr newEnv) {
+    env = std::move(newEnv);
+  }
+
 } // namespace monkey
