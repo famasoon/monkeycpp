@@ -1,6 +1,7 @@
 #include "lexer.hpp"
 #include <cctype>
 #include <unordered_map>
+#include <stdexcept>
 
 namespace Lexer
 {
@@ -66,6 +67,23 @@ namespace Lexer
   {
     auto it = keywords.find(ident);
     return it != keywords.end() ? it->second : Token::TokenType::IDENT;
+  }
+
+  std::string Lexer::readString() {
+    readChar(); // 開始の'"'をスキップ
+    
+    auto startPosition = position;
+    while (ch != 0 && ch != '"') {
+        readChar();
+    }
+    
+    if (ch == 0) {
+        throw std::runtime_error("unterminated string literal");
+    }
+    
+    std::string str = input.substr(startPosition, position - startPosition);
+    readChar(); // 終わりの'"'をスキップ
+    return str;
   }
 
   Token::Token Lexer::NextToken()
@@ -137,19 +155,10 @@ namespace Lexer
     case 0:
       tok = {Token::TokenType::EOF_, ""};
       break;
-    case '"': {
-      std::string str;
-      readChar();  // 最初の " をスキップ
-      while (ch != '"' && ch != 0) {
-        str += ch;
-        readChar();
-      }
-      if (ch == '"') {
-        readChar();  // 最後の " をスキップ
-        return {Token::TokenType::STRING, str};
-      }
-      return {Token::TokenType::ILLEGAL, "unterminated string literal"};
-    }
+    case '"':
+      tok.type = Token::TokenType::STRING;
+      tok.literal = readString();
+      return tok;
     default:
       if (std::isalpha(ch) || ch == '_')
       {

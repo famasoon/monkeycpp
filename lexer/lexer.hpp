@@ -19,6 +19,7 @@ namespace Lexer
     std::string readNumber();
     void skipWhitespace();
     Token::TokenType lookupIdent(const std::string &ident) const;
+    std::string readString();
 
   public:
     explicit Lexer(std::string input);
