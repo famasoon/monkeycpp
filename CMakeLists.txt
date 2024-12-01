@@ -67,17 +67,9 @@ target_compile_options(monkey_test PRIVATE
     -Wpedantic
 )
 
-# テストの追加（WORKING_DIRECTORY を追加）
-add_test(
-    NAME lexer_test 
-    COMMAND monkey_test --gtest_filter=LexerTest.*
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-add_test(
-    NAME parser_test 
-    COMMAND monkey_test --gtest_filter=ParserTest.*
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
+# テストの追加
+add_test(NAME lexer_test COMMAND monkey_test --gtest_filter=LexerTest.*)
+add_test(NAME parser_test COMMAND monkey_test --gtest_filter=ParserTest.*)
 
 # テストのプロパティ設定
 set_tests_properties(lexer_test parser_test
