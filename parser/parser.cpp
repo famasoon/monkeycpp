@@ -3,13 +3,149 @@
 namespace Parser
 {
 
+  std::unordered_map<Token::TokenType, Parser::Precedence> Parser::precedences = {
+      {Token::TokenType::EQ, Precedence::EQUALS},
+      {Token::TokenType::NOT_EQ, Precedence::EQUALS},
+      {Token::TokenType::LT, Precedence::LESSGREATER},
+      {Token::TokenType::GT, Precedence::LESSGREATER},
+      {Token::TokenType::PLUS, Precedence::SUM},
+      {Token::TokenType::MINUS, Precedence::SUM},
+      {Token::TokenType::SLASH, Precedence::PRODUCT},
+      {Token::TokenType::ASTERISK, Precedence::PRODUCT},
+      {Token::TokenType::LPAREN, Precedence::CALL},
+  };
+
   Parser::Parser(Lexer::Lexer lexer) : lexer(std::move(lexer)),
                                        curToken(Token::TokenType::ILLEGAL, ""),
                                        peekToken(Token::TokenType::ILLEGAL, "")
   {
-    // 2つのトークンを読み込む。curTokenとpeekTokenの両方をセットする
+    // パース関数の登録
+    registerPrefix(Token::TokenType::IDENT, [this]()
+                   { return parseIdentifier(); });
+    registerPrefix(Token::TokenType::INT, [this]()
+                   { return parseIntegerLiteral(); });
+    registerPrefix(Token::TokenType::BANG, [this]()
+                   { return parsePrefixExpression(); });
+    registerPrefix(Token::TokenType::MINUS, [this]()
+                   { return parsePrefixExpression(); });
+
+    registerInfix(Token::TokenType::PLUS, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::MINUS, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::SLASH, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::ASTERISK, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::EQ, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::NOT_EQ, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::LT, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+    registerInfix(Token::TokenType::GT, [this](auto left)
+                  { return parseInfixExpression(std::move(left)); });
+
+    // 2つのトークンを読み込む
     nextToken();
     nextToken();
+  }
+
+  void Parser::registerPrefix(Token::TokenType type, PrefixParseFn fn)
+  {
+    prefixParseFns[type] = std::move(fn);
+  }
+
+  void Parser::registerInfix(Token::TokenType type, InfixParseFn fn)
+  {
+    infixParseFns[type] = std::move(fn);
+  }
+
+  Parser::Precedence Parser::peekPrecedence() const
+  {
+    auto it = precedences.find(peekToken.type);
+    if (it != precedences.end())
+    {
+      return it->second;
+    }
+    return Precedence::LOWEST;
+  }
+
+  Parser::Precedence Parser::curPrecedence() const
+  {
+    auto it = precedences.find(curToken.type);
+    if (it != precedences.end())
+    {
+      return it->second;
+    }
+    return Precedence::LOWEST;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
+  {
+    auto prefix = prefixParseFns.find(curToken.type);
+    if (prefix == prefixParseFns.end())
+    {
+      noPrefixParseFnError(curToken.type);
+      return nullptr;
+    }
+
+    auto leftExp = prefix->second();
+
+    while (!peekTokenIs(Token::TokenType::SEMICOLON) && precedence < peekPrecedence())
+    {
+      auto infix = infixParseFns.find(peekToken.type);
+      if (infix == infixParseFns.end())
+      {
+        return leftExp;
+      }
+
+      nextToken();
+      leftExp = infix->second(std::move(leftExp));
+    }
+
+    return leftExp;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseIntegerLiteral()
+  {
+    try
+    {
+      int64_t value = std::stoll(curToken.literal);
+      return std::make_unique<AST::IntegerLiteral>(curToken, value);
+    }
+    catch (const std::exception &e)
+    {
+      std::string msg = "could not parse " + curToken.literal + " as integer";
+      errors.push_back(msg);
+      return nullptr;
+    }
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parsePrefixExpression()
+  {
+    auto expression = std::make_unique<AST::PrefixExpression>(
+        curToken,
+        curToken.literal);
+
+    nextToken();
+
+    expression->right = parseExpression(Precedence::PREFIX);
+    return expression;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseInfixExpression(std::unique_ptr<AST::Expression> left)
+  {
+    auto expression = std::make_unique<AST::InfixExpression>(
+        curToken,
+        curToken.literal,
+        std::move(left));
+
+    auto precedence = curPrecedence();
+    nextToken();
+    expression->right = parseExpression(precedence);
+
+    return expression;
   }
 
   void Parser::nextToken()

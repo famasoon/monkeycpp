@@ -99,4 +99,56 @@ namespace AST
     std::string String() const override;
   };
 
+  class IntegerLiteral : public Expression {
+  public:
+    Token::Token token;
+    int64_t value;
+
+    IntegerLiteral(Token::Token token, int64_t value)
+        : token(std::move(token)), value(value) {}
+
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override { return token.literal; }
+  };
+
+  class PrefixExpression : public Expression {
+  public:
+    Token::Token token;
+    std::string op;
+    std::unique_ptr<Expression> right;
+
+    PrefixExpression(Token::Token token, std::string op)
+        : token(std::move(token)), op(std::move(op)) {}
+
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override {
+        std::string out = "(";
+        out += op;
+        out += right->String();
+        out += ")";
+        return out;
+    }
+  };
+
+  class InfixExpression : public Expression {
+  public:
+    Token::Token token;
+    std::string op;
+    std::unique_ptr<Expression> left;
+    std::unique_ptr<Expression> right;
+
+    InfixExpression(Token::Token token, std::string op, std::unique_ptr<Expression> left)
+        : token(std::move(token)), op(std::move(op)), left(std::move(left)) {}
+
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override {
+        std::string out = "(";
+        out += left->String();
+        out += " " + op + " ";
+        out += right->String();
+        out += ")";
+        return out;
+    }
+  };
+
 } // namespace AST
