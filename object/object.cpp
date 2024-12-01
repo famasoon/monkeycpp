@@ -1,4 +1,5 @@
 #include "object.hpp"
+#include <sstream>
 
 namespace monkey {
 
@@ -69,6 +70,45 @@ std::string Error::inspect() const {
 
 const std::string& Error::message() const {
     return message_;
+}
+
+std::string Function::inspect() const {
+    std::string params;
+    for (size_t i = 0; i < parameters.size(); i++) {
+        params += parameters[i];
+        if (i < parameters.size() - 1) {
+            params += ", ";
+        }
+    }
+    return "fn(" + params + ") {\n" + (body ? body->String() : "") + "\n}";
+}
+
+std::string Array::inspect() const {
+    std::string result = "[";
+    for (size_t i = 0; i < elements.size(); i++) {
+        if (elements[i]) {
+            result += elements[i]->inspect();
+        }
+        if (i < elements.size() - 1) {
+            result += ", ";
+        }
+    }
+    result += "]";
+    return result;
+}
+
+std::string Hash::inspect() const {
+    std::string result = "{";
+    bool first = true;
+    for (const auto& pair : pairs) {
+        if (!first) {
+            result += ", ";
+        }
+        result += pair.second.key->inspect() + ": " + pair.second.value->inspect();
+        first = false;
+    }
+    result += "}";
+    return result;
 }
 
 } // namespace monkey

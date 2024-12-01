@@ -23,6 +23,15 @@ namespace monkey
     ObjectPtr evalIntegerLiteral(const AST::IntegerLiteral *node);
     ObjectPtr evalBooleanLiteral(const AST::BooleanLiteral *node);
     ObjectPtr evalStringLiteral(const AST::StringLiteral *node);
+    ObjectPtr evalFunctionLiteral(const AST::FunctionLiteral *node);
+    ObjectPtr evalIdentifier(const AST::Identifier *node);
+
+    // 文の評価
+    ObjectPtr evalBlockStatement(const AST::BlockStatement *block);
+    ObjectPtr evalLetStatement(const AST::LetStatement *letStmt);
+    ObjectPtr evalReturnStatement(const AST::ReturnStatement *returnStmt);
+    ObjectPtr evalExpressionStatement(const AST::ExpressionStatement *exprStmt);
+    ObjectPtr evalCallExpression(const AST::CallExpression *call);
 
     // 演算子の評価
     ObjectPtr evalBangOperatorExpression(const ObjectPtr &right);

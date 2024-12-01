@@ -43,29 +43,49 @@ namespace monkey
     {
       return evalStringLiteral(strLiteral);
     }
-
-    // 式文の評価
-    if (auto *exprStmt = dynamic_cast<const AST::ExpressionStatement *>(node))
+    if (auto *funcLiteral = dynamic_cast<const AST::FunctionLiteral *>(node))
     {
-      return exprStmt->expression ? eval(exprStmt->expression.get()) : std::make_shared<Null>();
+      return evalFunctionLiteral(funcLiteral);
+    }
+    if (auto *identifier = dynamic_cast<const AST::Identifier *>(node))
+    {
+      return evalIdentifier(identifier);
     }
 
-    // プログラムの評価
+    // 文の評価
     if (auto *program = dynamic_cast<const AST::Program *>(node))
     {
       return evalProgram(program);
     }
+    if (auto *blockStmt = dynamic_cast<const AST::BlockStatement *>(node))
+    {
+      return evalBlockStatement(blockStmt);
+    }
+    if (auto *letStmt = dynamic_cast<const AST::LetStatement *>(node))
+    {
+      return evalLetStatement(letStmt);
+    }
+    if (auto *returnStmt = dynamic_cast<const AST::ReturnStatement *>(node))
+    {
+      return evalReturnStatement(returnStmt);
+    }
+    if (auto *exprStmt = dynamic_cast<const AST::ExpressionStatement *>(node))
+    {
+      return evalExpressionStatement(exprStmt);
+    }
 
-    // 前置式の評価
+    // 式の評価
     if (auto *prefixExpr = dynamic_cast<const AST::PrefixExpression *>(node))
     {
       return evalPrefixExpression(prefixExpr);
     }
-
-    // 中置式の評価
     if (auto *infixExpr = dynamic_cast<const AST::InfixExpression *>(node))
     {
       return evalInfixExpression(infixExpr);
+    }
+    if (auto *callExpr = dynamic_cast<const AST::CallExpression *>(node))
+    {
+      return evalCallExpression(callExpr);
     }
 
     return std::make_shared<Null>();
@@ -291,6 +311,133 @@ namespace monkey
   {
     debugPrint("Error: " + message);
     return std::make_shared<Error>(message);
+  }
+
+  ObjectPtr Evaluator::evalFunctionLiteral(const AST::FunctionLiteral *node)
+  {
+    if (!node)
+    {
+      return std::make_shared<Null>();
+    }
+
+    std::vector<std::string> params;
+    for (const auto &param : node->parameters)
+    {
+      if (param)
+      {
+        params.push_back(param->value);
+      }
+    }
+
+    return std::make_shared<Function>(params, node->body.get(), nullptr);
+  }
+
+  ObjectPtr Evaluator::evalIdentifier(const AST::Identifier *node)
+  {
+    if (!node)
+    {
+      return std::make_shared<Null>();
+    }
+    return std::make_shared<String>(node->value); // 簡単な実装として文字列として評価
+  }
+
+  ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement *block)
+  {
+    if (!block)
+    {
+      return std::make_shared<Null>();
+    }
+
+    ObjectPtr result;
+    for (const auto &stmt : block->statements)
+    {
+      if (!stmt)
+        continue;
+      
+      result = eval(stmt.get());
+      if (isError(result))
+      {
+        return result;
+      }
+    }
+    return result ? result : std::make_shared<Null>();
+  }
+
+  ObjectPtr Evaluator::evalLetStatement(const AST::LetStatement *letStmt)
+  {
+    if (!letStmt || !letStmt->value)
+    {
+      return std::make_shared<Null>();
+    }
+
+    auto value = eval(letStmt->value.get());
+    if (isError(value))
+    {
+      return value;
+    }
+
+    return value;
+  }
+
+  ObjectPtr Evaluator::evalReturnStatement(const AST::ReturnStatement *returnStmt)
+  {
+    if (!returnStmt || !returnStmt->returnValue)
+    {
+      return std::make_shared<Null>();
+    }
+
+    auto value = eval(returnStmt->returnValue.get());
+    if (isError(value))
+    {
+      return value;
+    }
+
+    return std::make_shared<ReturnValue>(value);
+  }
+
+  ObjectPtr Evaluator::evalCallExpression(const AST::CallExpression *call)
+  {
+    if (!call || !call->function)
+    {
+      return newError("invalid call expression");
+    }
+
+    auto function = eval(call->function.get());
+    if (isError(function))
+    {
+      return function;
+    }
+
+    std::vector<ObjectPtr> args;
+    for (const auto &arg : call->arguments)
+    {
+      if (!arg)
+        continue;
+      
+      auto evaluated = eval(arg.get());
+      if (isError(evaluated))
+      {
+        return evaluated;
+      }
+      args.push_back(evaluated);
+    }
+
+    if (auto fn = std::dynamic_pointer_cast<Function>(function))
+    {
+      // 関数呼び出しの実装（環境の設定なども必要）
+      return std::make_shared<Null>(); // 仮の実装
+    }
+
+    return newError("not a function: " + objectTypeToString(function->type()));
+  }
+
+  ObjectPtr Evaluator::evalExpressionStatement(const AST::ExpressionStatement* exprStmt)
+  {
+    if (!exprStmt || !exprStmt->expression)
+    {
+        return std::make_shared<Null>();
+    }
+    return eval(exprStmt->expression.get());
   }
 
 } // namespace monkey
