@@ -379,3 +379,98 @@ TEST_F(ParserTest, TestReturnStatements)
   ASSERT_NE(value3, nullptr);
   EXPECT_EQ(value3->value, 993322);
 }
+
+TEST_F(ParserTest, TestArrayLiterals) {
+    struct TestCase {
+        std::string input;
+        std::vector<std::string> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"[1, 2 * 2, 3 + 3]", {"1", "(2 * 2)", "(3 + 3)"}},
+        {"[]", {}},
+        {"[1]", {"1"}},
+        {"[1, 2, 3]", {"1", "2", "3"}},
+    };
+
+    for (const auto& tt : tests) {
+        auto [program, parser_owner, parser] = ParseInput(tt.input);
+        ASSERT_NE(program.get(), nullptr);
+        ASSERT_TRUE(parser->Errors().empty());
+        ASSERT_EQ(program->statements.size(), 1);
+
+        auto stmt = dynamic_cast<AST::ExpressionStatement*>(program->statements[0].get());
+        ASSERT_NE(stmt, nullptr);
+
+        auto array = dynamic_cast<AST::ArrayLiteral*>(stmt->expression.get());
+        ASSERT_NE(array, nullptr);
+        ASSERT_EQ(array->elements.size(), tt.expected.size());
+
+        for (size_t i = 0; i < tt.expected.size(); i++) {
+            ASSERT_NE(array->elements[i], nullptr);
+            EXPECT_EQ(array->elements[i]->String(), tt.expected[i]);
+        }
+    }
+}
+
+TEST_F(ParserTest, TestIndexExpressions) {
+    std::string input = "myArray[1 + 1]";
+    
+    auto [program, parser_owner, parser] = ParseInput(input);
+    ASSERT_NE(program.get(), nullptr);
+    ASSERT_TRUE(parser->Errors().empty());
+    ASSERT_EQ(program->statements.size(), 1);
+
+    auto stmt = dynamic_cast<AST::ExpressionStatement*>(program->statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto indexExp = dynamic_cast<AST::IndexExpression*>(stmt->expression.get());
+    ASSERT_NE(indexExp, nullptr);
+
+    auto ident = dynamic_cast<AST::Identifier*>(indexExp->left.get());
+    ASSERT_NE(ident, nullptr);
+    EXPECT_EQ(ident->value, "myArray");
+
+    auto index = dynamic_cast<AST::InfixExpression*>(indexExp->index.get());
+    ASSERT_NE(index, nullptr);
+    EXPECT_EQ(index->op, "+");
+
+    auto left = dynamic_cast<AST::IntegerLiteral*>(index->left.get());
+    ASSERT_NE(left, nullptr);
+    EXPECT_EQ(left->value, 1);
+
+    auto right = dynamic_cast<AST::IntegerLiteral*>(index->right.get());
+    ASSERT_NE(right, nullptr);
+    EXPECT_EQ(right->value, 1);
+}
+
+// ヘルパー関数を追加
+void testIntegerLiteral(AST::Expression* expr, int64_t value) {
+    auto intLit = dynamic_cast<AST::IntegerLiteral*>(expr);
+    ASSERT_NE(intLit, nullptr) << "Expression is not IntegerLiteral";
+    EXPECT_EQ(intLit->value, value);
+}
+
+void testIdentifier(AST::Expression* expr, const std::string& value) {
+    auto ident = dynamic_cast<AST::Identifier*>(expr);
+    ASSERT_NE(ident, nullptr) << "Expression is not Identifier";
+    EXPECT_EQ(ident->value, value);
+}
+
+void testInfixExpression(AST::Expression* expr, 
+                        int64_t left_value, 
+                        const std::string& operator_literal, 
+                        int64_t right_value) {
+    auto opExpr = dynamic_cast<AST::InfixExpression*>(expr);
+    ASSERT_NE(opExpr, nullptr) << "Expression is not InfixExpression";
+    
+    EXPECT_EQ(opExpr->op, operator_literal);
+    
+    auto leftExpr = dynamic_cast<AST::IntegerLiteral*>(opExpr->left.get());
+    ASSERT_NE(leftExpr, nullptr) << "Left expression is not IntegerLiteral";
+    EXPECT_EQ(leftExpr->value, left_value);
+    
+    auto rightExpr = dynamic_cast<AST::IntegerLiteral*>(opExpr->right.get());
+    ASSERT_NE(rightExpr, nullptr) << "Right expression is not IntegerLiteral";
+    EXPECT_EQ(rightExpr->value, right_value);
+}

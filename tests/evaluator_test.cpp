@@ -172,4 +172,74 @@ TEST(EvaluatorTest, TestStringConcatenation) {
     
     auto evaluated = testEval(input);
     testStringObject(evaluated, "Hello World!");
+}
+
+TEST(EvaluatorTest, TestArrayLiterals) {
+    std::string input = "[1, 2 * 2, 3 + 3]";
+    
+    auto evaluated = testEval(input);
+    auto result = std::dynamic_pointer_cast<monkey::Array>(evaluated);
+    
+    ASSERT_NE(result, nullptr);
+    ASSERT_EQ(result->elements.size(), 3);
+    
+    testIntegerObject(result->elements[0], 1);
+    testIntegerObject(result->elements[1], 4);
+    testIntegerObject(result->elements[2], 6);
+}
+
+TEST(EvaluatorTest, TestArrayIndexExpressions) {
+    struct TestCase {
+        std::string input;
+        std::variant<int64_t, std::monostate> expected;
+    };
+
+    std::vector<TestCase> tests = {
+        {"[1, 2, 3][0]", 1},
+        {"[1, 2, 3][1]", 2},
+        {"[1, 2, 3][2]", 3},
+        {"let i = 0; [1][i];", 1},
+        {"[1, 2, 3][1 + 1];", 3},
+        {"let myArray = [1, 2, 3]; myArray[2];", 3},
+        {"let myArray = [1, 2, 3]; myArray[0] + myArray[1] + myArray[2];", 6},
+        {"let myArray = [1, 2, 3]; let i = myArray[0]; myArray[i]", 2},
+        {"[1, 2, 3][3]", std::monostate{}},  // null
+        {"[1, 2, 3][-1]", std::monostate{}}, // null
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        
+        if (std::holds_alternative<int64_t>(tt.expected)) {
+            testIntegerObject(evaluated, std::get<int64_t>(tt.expected));
+        } else {
+            ASSERT_NE(std::dynamic_pointer_cast<monkey::Null>(evaluated), nullptr);
+        }
+    }
+}
+
+TEST(EvaluatorTest, TestArrayErrorHandling) {
+    struct TestCase {
+        std::string input;
+        std::string expectedError;
+    };
+
+    std::vector<TestCase> tests = {
+        {
+            "5[1]",
+            "index operator not supported: INTEGER"
+        },
+        {
+            "[1, 2, 3][\"1\"]",
+            "array index must be an integer"
+        },
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        auto errorObj = std::dynamic_pointer_cast<monkey::Error>(evaluated);
+        
+        ASSERT_NE(errorObj, nullptr);
+        EXPECT_EQ(errorObj->message(), tt.expectedError);
+    }
 } 
