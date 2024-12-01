@@ -10,26 +10,24 @@ FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
 )
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-# インクルードディレクトリの設定
-include_directories(
-    ${CMAKE_SOURCE_DIR}
-    ${gtest_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/ast
-    ${CMAKE_SOURCE_DIR}/evaluator
-    ${CMAKE_SOURCE_DIR}/object
-    ${CMAKE_SOURCE_DIR}/parser
-    ${CMAKE_SOURCE_DIR}/lexer
-    ${CMAKE_SOURCE_DIR}/token
-)
-
-# objectライブラリの追加
+# オブジェクトライブラリ
 add_library(object
     object/object.cpp
 )
 
-# メインのプログラムのソースファイル
+# 評価器ライブラリ
+add_library(evaluator
+    evaluator/evaluator.cpp
+)
+target_link_libraries(evaluator
+    object
+)
+
+# メインライブラリ
 add_library(monkey_lib
     token/token.cpp
     lexer/lexer.cpp
@@ -37,49 +35,54 @@ add_library(monkey_lib
     parser/parser.cpp
     repl/repl.cpp
 )
-
-# メインの実行ファイル
-add_executable(monkey main.cpp)
-target_link_libraries(monkey monkey_lib object)
-
-# evaluatorライブラリの追加
-add_library(evaluator
-    evaluator/evaluator.cpp
-)
-target_link_libraries(evaluator
+target_link_libraries(monkey_lib
     object
-    monkey_lib
+    evaluator
 )
 
-# テストの設定
+# 実行可能ファイル
+add_executable(monkey
+    main.cpp
+)
+target_link_libraries(monkey
+    monkey_lib
+    evaluator
+)
+
+# テスト関連
 enable_testing()
 
-# lexer_parserのテスト
-add_executable(monkey_test
+# レキサーテスト
+add_executable(lexer_test
     tests/lexer_test.cpp
-    tests/parser_test.cpp
 )
-target_link_libraries(monkey_test
-    PRIVATE
-    GTest::gtest_main
-    GTest::gtest
+target_link_libraries(lexer_test
     monkey_lib
-    object
+    GTest::gtest
+    GTest::gtest_main
 )
 
-# evaluatorのテスト
+# パーサーテスト
+add_executable(parser_test
+    tests/parser_test.cpp
+)
+target_link_libraries(parser_test
+    monkey_lib
+    GTest::gtest
+    GTest::gtest_main
+)
+
+# 評価器テスト
 add_executable(evaluator_test
     tests/evaluator_test.cpp
 )
 target_link_libraries(evaluator_test
-    PRIVATE
-    gtest
-    gtest_main
-    evaluator
     monkey_lib
-    object
+    evaluator
+    GTest::gtest
+    GTest::gtest_main
 )
 
-include(GoogleTest)
-gtest_discover_tests(monkey_test)
-gtest_discover_tests(evaluator_test) 
+add_test(NAME lexer_test COMMAND lexer_test)
+add_test(NAME parser_test COMMAND parser_test)
+add_test(NAME evaluator_test COMMAND evaluator_test) 

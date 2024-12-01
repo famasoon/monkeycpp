@@ -185,6 +185,19 @@ object/fast:
 .PHONY : object/fast
 
 #=============================================================================
+# Target rules for targets named evaluator
+
+# Build rule for target.
+evaluator: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 evaluator
+.PHONY : evaluator
+
+# fast build rule for target.
+evaluator/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/build
+.PHONY : evaluator/fast
+
+#=============================================================================
 # Target rules for targets named monkey_lib
 
 # Build rule for target.
@@ -211,30 +224,30 @@ monkey/fast:
 .PHONY : monkey/fast
 
 #=============================================================================
-# Target rules for targets named evaluator
+# Target rules for targets named lexer_test
 
 # Build rule for target.
-evaluator: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 evaluator
-.PHONY : evaluator
+lexer_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 lexer_test
+.PHONY : lexer_test
 
 # fast build rule for target.
-evaluator/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/build
-.PHONY : evaluator/fast
+lexer_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lexer_test.dir/build.make CMakeFiles/lexer_test.dir/build
+.PHONY : lexer_test/fast
 
 #=============================================================================
-# Target rules for targets named monkey_test
+# Target rules for targets named parser_test
 
 # Build rule for target.
-monkey_test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 monkey_test
-.PHONY : monkey_test
+parser_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 parser_test
+.PHONY : parser_test
 
 # fast build rule for target.
-monkey_test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/build
-.PHONY : monkey_test/fast
+parser_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/parser_test.dir/build.make CMakeFiles/parser_test.dir/build
+.PHONY : parser_test/fast
 
 #=============================================================================
 # Target rules for targets named evaluator_test
@@ -472,7 +485,7 @@ tests/lexer_test.o: tests/lexer_test.cpp.o
 
 # target to build an object file
 tests/lexer_test.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/lexer_test.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lexer_test.dir/build.make CMakeFiles/lexer_test.dir/tests/lexer_test.cpp.o
 .PHONY : tests/lexer_test.cpp.o
 
 tests/lexer_test.i: tests/lexer_test.cpp.i
@@ -480,7 +493,7 @@ tests/lexer_test.i: tests/lexer_test.cpp.i
 
 # target to preprocess a source file
 tests/lexer_test.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/lexer_test.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lexer_test.dir/build.make CMakeFiles/lexer_test.dir/tests/lexer_test.cpp.i
 .PHONY : tests/lexer_test.cpp.i
 
 tests/lexer_test.s: tests/lexer_test.cpp.s
@@ -488,7 +501,7 @@ tests/lexer_test.s: tests/lexer_test.cpp.s
 
 # target to generate assembly for a file
 tests/lexer_test.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/lexer_test.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/lexer_test.dir/build.make CMakeFiles/lexer_test.dir/tests/lexer_test.cpp.s
 .PHONY : tests/lexer_test.cpp.s
 
 tests/parser_test.o: tests/parser_test.cpp.o
@@ -496,7 +509,7 @@ tests/parser_test.o: tests/parser_test.cpp.o
 
 # target to build an object file
 tests/parser_test.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/parser_test.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/parser_test.dir/build.make CMakeFiles/parser_test.dir/tests/parser_test.cpp.o
 .PHONY : tests/parser_test.cpp.o
 
 tests/parser_test.i: tests/parser_test.cpp.i
@@ -504,7 +517,7 @@ tests/parser_test.i: tests/parser_test.cpp.i
 
 # target to preprocess a source file
 tests/parser_test.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/parser_test.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/parser_test.dir/build.make CMakeFiles/parser_test.dir/tests/parser_test.cpp.i
 .PHONY : tests/parser_test.cpp.i
 
 tests/parser_test.s: tests/parser_test.cpp.s
@@ -512,7 +525,7 @@ tests/parser_test.s: tests/parser_test.cpp.s
 
 # target to generate assembly for a file
 tests/parser_test.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/tests/parser_test.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/parser_test.dir/build.make CMakeFiles/parser_test.dir/tests/parser_test.cpp.s
 .PHONY : tests/parser_test.cpp.s
 
 token/token.o: token/token.cpp.o
@@ -556,10 +569,11 @@ help:
 	@echo "... evaluator_test"
 	@echo "... gtest"
 	@echo "... gtest_main"
+	@echo "... lexer_test"
 	@echo "... monkey"
 	@echo "... monkey_lib"
-	@echo "... monkey_test"
 	@echo "... object"
+	@echo "... parser_test"
 	@echo "... ast/ast.o"
 	@echo "... ast/ast.i"
 	@echo "... ast/ast.s"
