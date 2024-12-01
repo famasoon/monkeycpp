@@ -42,15 +42,24 @@ namespace Parser
 
     static std::unordered_map<Token::TokenType, Precedence> precedences;
 
+    // パーサー初期化
+    void initParseFns();
+
+    // パーサー登録
     void registerPrefix(Token::TokenType type, PrefixParseFn fn);
     void registerInfix(Token::TokenType type, InfixParseFn fn);
+    
+    // 優先順位関連
     Precedence peekPrecedence() const;
     Precedence curPrecedence() const;
 
+    // トークン処理
     void nextToken();
     bool curTokenIs(Token::TokenType t) const;
     bool peekTokenIs(Token::TokenType t) const;
     bool expectPeek(Token::TokenType t);
+    
+    // エラー処理
     void peekError(Token::TokenType t);
     void registerError(const std::string &msg);
     void noPrefixParseFnError(Token::TokenType t);
