@@ -29,4 +29,9 @@ namespace monkey
   const std::string RBRACE = "}";
   const std::string FUNCTION = "FUNCTION";
   const std::string LET = "LET";
+  const std::string TRUE = "TRUE";
+  const std::string FALSE = "FALSE";
+  const std::string IF = "IF";
+  const std::string ELSE = "ELSE";
+  const std::string RETURN = "RETURN";
 }
