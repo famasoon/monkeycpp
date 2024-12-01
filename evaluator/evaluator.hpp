@@ -21,16 +21,18 @@ namespace monkey
     ObjectPtr evalIntegerLiteral(const AST::IntegerLiteral* node);
     ObjectPtr evalStringLiteral(const AST::StringLiteral* node);
     ObjectPtr evalBooleanLiteral(const AST::BooleanLiteral* node);
-    ObjectPtr evalPrefixExpression(const AST::PrefixExpression* node);
-    ObjectPtr evalInfixExpression(const AST::InfixExpression* node);
+    ObjectPtr evalPrefixExpression(const std::string& op, const ObjectPtr& right);
+    ObjectPtr evalInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
     
     ObjectPtr evalBangOperatorExpression(const ObjectPtr& right);
     ObjectPtr evalMinusPrefixOperatorExpression(const ObjectPtr& right);
+    ObjectPtr evalEqualityExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
     
     ObjectPtr evalIntegerInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
     ObjectPtr evalStringInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
     
     ObjectPtr newError(const std::string& message);
+    std::string objectTypeToString(ObjectType type);
   };
 
 } // namespace monkey

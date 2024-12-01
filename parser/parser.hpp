@@ -96,6 +96,8 @@ namespace Parser
     std::unique_ptr<AST::Expression> parseCallExpression(std::unique_ptr<AST::Expression> function);
     std::vector<std::unique_ptr<AST::Expression>> parseExpressionList(Token::TokenType end);
     std::unique_ptr<AST::Expression> parseBoolean();
+    std::unique_ptr<AST::Expression> parseGroupedExpression();
+    std::unique_ptr<AST::Expression> parseStringLiteral();
   };
 
 } // namespace Parser

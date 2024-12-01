@@ -13,35 +13,62 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# objectライブラリの追加
+add_library(object
+    object/object.cpp
+)
+
 # メインのプログラムのソースファイル
-set(SOURCES
-    token/token.hpp
+add_library(monkey_lib
     token/token.cpp
-    lexer/lexer.hpp
     lexer/lexer.cpp
-    ast/ast.hpp
     ast/ast.cpp
-    parser/parser.hpp
     parser/parser.cpp
-    repl/repl.hpp
     repl/repl.cpp
 )
 
 # メインの実行ファイル
-add_executable(monkey ${SOURCES} main.cpp)
+add_executable(monkey main.cpp)
+target_link_libraries(monkey monkey_lib object)
+
+# evaluatorライブラリの追加
+add_library(evaluator
+    evaluator/evaluator.cpp
+)
+target_link_libraries(evaluator
+    object
+    monkey_lib
+)
 
 # テストの設定
 enable_testing()
 
-# テストのソースファイル
-set(TEST_SOURCES
+# lexer_parserのテスト
+add_executable(monkey_test
     tests/lexer_test.cpp
     tests/parser_test.cpp
 )
+target_link_libraries(monkey_test
+    PRIVATE
+    GTest::gtest_main
+    GTest::gtest
+    monkey_lib
+    object
+)
 
-# テスト実行ファイル
-add_executable(monkey_test ${SOURCES} ${TEST_SOURCES})
-target_link_libraries(monkey_test GTest::gtest_main GTest::gtest)
+# evaluatorのテスト
+add_executable(evaluator_test
+    tests/evaluator_test.cpp
+)
+target_link_libraries(evaluator_test
+    PRIVATE
+    gtest
+    gtest_main
+    evaluator
+    monkey_lib
+    object
+)
 
 include(GoogleTest)
-gtest_discover_tests(monkey_test) 
+gtest_discover_tests(monkey_test)
+gtest_discover_tests(evaluator_test) 

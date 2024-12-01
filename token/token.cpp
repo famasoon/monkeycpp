@@ -61,6 +61,8 @@ namespace Token
       return "ELSE";
     case TokenType::RETURN:
       return "RETURN";
+    case TokenType::STRING:
+      return "STRING";
     default:
       return "UNKNOWN";
     }

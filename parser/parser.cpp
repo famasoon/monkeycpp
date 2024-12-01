@@ -35,6 +35,10 @@ namespace Parser
     registerPrefix(Token::TokenType::FALSE, std::bind(&Parser::parseBoolean, this));
     registerPrefix(Token::TokenType::FUNCTION, [this]
                    { return parseFunctionLiteral(); });
+    registerPrefix(Token::TokenType::LPAREN, [this]
+                   { return parseGroupedExpression(); });
+    registerPrefix(Token::TokenType::STRING, [this]
+                   { return parseStringLiteral(); });
 
     const std::vector<Token::TokenType> infixOps = {
         Token::TokenType::PLUS, Token::TokenType::MINUS,
@@ -476,6 +480,21 @@ namespace Parser
     return std::make_unique<AST::BooleanLiteral>(
         curToken,
         curTokenIs(Token::TokenType::TRUE));
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseGroupedExpression() {
+    nextToken();  // '('をスキップ
+
+    auto exp = parseExpression(Precedence::LOWEST);
+    if (!expectPeek(Token::TokenType::RPAREN)) {
+        return nullptr;
+    }
+
+    return exp;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseStringLiteral() {
+    return std::make_unique<AST::StringLiteral>(curToken, curToken.literal);
   }
 
 } // namespace Parser

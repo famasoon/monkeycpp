@@ -172,6 +172,32 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named object
+
+# Build rule for target.
+object: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 object
+.PHONY : object
+
+# fast build rule for target.
+object/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/object.dir/build.make CMakeFiles/object.dir/build
+.PHONY : object/fast
+
+#=============================================================================
+# Target rules for targets named monkey_lib
+
+# Build rule for target.
+monkey_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 monkey_lib
+.PHONY : monkey_lib
+
+# fast build rule for target.
+monkey_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/build
+.PHONY : monkey_lib/fast
+
+#=============================================================================
 # Target rules for targets named monkey
 
 # Build rule for target.
@@ -185,6 +211,19 @@ monkey/fast:
 .PHONY : monkey/fast
 
 #=============================================================================
+# Target rules for targets named evaluator
+
+# Build rule for target.
+evaluator: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 evaluator
+.PHONY : evaluator
+
+# fast build rule for target.
+evaluator/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/build
+.PHONY : evaluator/fast
+
+#=============================================================================
 # Target rules for targets named monkey_test
 
 # Build rule for target.
@@ -196,6 +235,19 @@ monkey_test: cmake_check_build_system
 monkey_test/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/build
 .PHONY : monkey_test/fast
+
+#=============================================================================
+# Target rules for targets named evaluator_test
+
+# Build rule for target.
+evaluator_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 evaluator_test
+.PHONY : evaluator_test
+
+# fast build rule for target.
+evaluator_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator_test.dir/build.make CMakeFiles/evaluator_test.dir/build
+.PHONY : evaluator_test/fast
 
 #=============================================================================
 # Target rules for targets named gtest
@@ -228,8 +280,7 @@ ast/ast.o: ast/ast.cpp.o
 
 # target to build an object file
 ast/ast.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/ast/ast.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/ast/ast.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/ast/ast.cpp.o
 .PHONY : ast/ast.cpp.o
 
 ast/ast.i: ast/ast.cpp.i
@@ -237,8 +288,7 @@ ast/ast.i: ast/ast.cpp.i
 
 # target to preprocess a source file
 ast/ast.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/ast/ast.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/ast/ast.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/ast/ast.cpp.i
 .PHONY : ast/ast.cpp.i
 
 ast/ast.s: ast/ast.cpp.s
@@ -246,17 +296,39 @@ ast/ast.s: ast/ast.cpp.s
 
 # target to generate assembly for a file
 ast/ast.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/ast/ast.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/ast/ast.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/ast/ast.cpp.s
 .PHONY : ast/ast.cpp.s
+
+evaluator/evaluator.o: evaluator/evaluator.cpp.o
+.PHONY : evaluator/evaluator.o
+
+# target to build an object file
+evaluator/evaluator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/evaluator/evaluator.cpp.o
+.PHONY : evaluator/evaluator.cpp.o
+
+evaluator/evaluator.i: evaluator/evaluator.cpp.i
+.PHONY : evaluator/evaluator.i
+
+# target to preprocess a source file
+evaluator/evaluator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/evaluator/evaluator.cpp.i
+.PHONY : evaluator/evaluator.cpp.i
+
+evaluator/evaluator.s: evaluator/evaluator.cpp.s
+.PHONY : evaluator/evaluator.s
+
+# target to generate assembly for a file
+evaluator/evaluator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator.dir/build.make CMakeFiles/evaluator.dir/evaluator/evaluator.cpp.s
+.PHONY : evaluator/evaluator.cpp.s
 
 lexer/lexer.o: lexer/lexer.cpp.o
 .PHONY : lexer/lexer.o
 
 # target to build an object file
 lexer/lexer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/lexer/lexer.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/lexer/lexer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/lexer/lexer.cpp.o
 .PHONY : lexer/lexer.cpp.o
 
 lexer/lexer.i: lexer/lexer.cpp.i
@@ -264,8 +336,7 @@ lexer/lexer.i: lexer/lexer.cpp.i
 
 # target to preprocess a source file
 lexer/lexer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/lexer/lexer.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/lexer/lexer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/lexer/lexer.cpp.i
 .PHONY : lexer/lexer.cpp.i
 
 lexer/lexer.s: lexer/lexer.cpp.s
@@ -273,8 +344,7 @@ lexer/lexer.s: lexer/lexer.cpp.s
 
 # target to generate assembly for a file
 lexer/lexer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/lexer/lexer.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/lexer/lexer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/lexer/lexer.cpp.s
 .PHONY : lexer/lexer.cpp.s
 
 main.o: main.cpp.o
@@ -301,13 +371,36 @@ main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+object/object.o: object/object.cpp.o
+.PHONY : object/object.o
+
+# target to build an object file
+object/object.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/object.dir/build.make CMakeFiles/object.dir/object/object.cpp.o
+.PHONY : object/object.cpp.o
+
+object/object.i: object/object.cpp.i
+.PHONY : object/object.i
+
+# target to preprocess a source file
+object/object.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/object.dir/build.make CMakeFiles/object.dir/object/object.cpp.i
+.PHONY : object/object.cpp.i
+
+object/object.s: object/object.cpp.s
+.PHONY : object/object.s
+
+# target to generate assembly for a file
+object/object.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/object.dir/build.make CMakeFiles/object.dir/object/object.cpp.s
+.PHONY : object/object.cpp.s
+
 parser/parser.o: parser/parser.cpp.o
 .PHONY : parser/parser.o
 
 # target to build an object file
 parser/parser.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/parser/parser.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/parser/parser.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/parser/parser.cpp.o
 .PHONY : parser/parser.cpp.o
 
 parser/parser.i: parser/parser.cpp.i
@@ -315,8 +408,7 @@ parser/parser.i: parser/parser.cpp.i
 
 # target to preprocess a source file
 parser/parser.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/parser/parser.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/parser/parser.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/parser/parser.cpp.i
 .PHONY : parser/parser.cpp.i
 
 parser/parser.s: parser/parser.cpp.s
@@ -324,8 +416,7 @@ parser/parser.s: parser/parser.cpp.s
 
 # target to generate assembly for a file
 parser/parser.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/parser/parser.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/parser/parser.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/parser/parser.cpp.s
 .PHONY : parser/parser.cpp.s
 
 repl/repl.o: repl/repl.cpp.o
@@ -333,8 +424,7 @@ repl/repl.o: repl/repl.cpp.o
 
 # target to build an object file
 repl/repl.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/repl/repl.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/repl/repl.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/repl/repl.cpp.o
 .PHONY : repl/repl.cpp.o
 
 repl/repl.i: repl/repl.cpp.i
@@ -342,8 +432,7 @@ repl/repl.i: repl/repl.cpp.i
 
 # target to preprocess a source file
 repl/repl.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/repl/repl.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/repl/repl.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/repl/repl.cpp.i
 .PHONY : repl/repl.cpp.i
 
 repl/repl.s: repl/repl.cpp.s
@@ -351,9 +440,32 @@ repl/repl.s: repl/repl.cpp.s
 
 # target to generate assembly for a file
 repl/repl.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/repl/repl.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/repl/repl.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/repl/repl.cpp.s
 .PHONY : repl/repl.cpp.s
+
+tests/evaluator_test.o: tests/evaluator_test.cpp.o
+.PHONY : tests/evaluator_test.o
+
+# target to build an object file
+tests/evaluator_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator_test.dir/build.make CMakeFiles/evaluator_test.dir/tests/evaluator_test.cpp.o
+.PHONY : tests/evaluator_test.cpp.o
+
+tests/evaluator_test.i: tests/evaluator_test.cpp.i
+.PHONY : tests/evaluator_test.i
+
+# target to preprocess a source file
+tests/evaluator_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator_test.dir/build.make CMakeFiles/evaluator_test.dir/tests/evaluator_test.cpp.i
+.PHONY : tests/evaluator_test.cpp.i
+
+tests/evaluator_test.s: tests/evaluator_test.cpp.s
+.PHONY : tests/evaluator_test.s
+
+# target to generate assembly for a file
+tests/evaluator_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/evaluator_test.dir/build.make CMakeFiles/evaluator_test.dir/tests/evaluator_test.cpp.s
+.PHONY : tests/evaluator_test.cpp.s
 
 tests/lexer_test.o: tests/lexer_test.cpp.o
 .PHONY : tests/lexer_test.o
@@ -408,8 +520,7 @@ token/token.o: token/token.cpp.o
 
 # target to build an object file
 token/token.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/token/token.cpp.o
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/token/token.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/token/token.cpp.o
 .PHONY : token/token.cpp.o
 
 token/token.i: token/token.cpp.i
@@ -417,8 +528,7 @@ token/token.i: token/token.cpp.i
 
 # target to preprocess a source file
 token/token.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/token/token.cpp.i
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/token/token.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/token/token.cpp.i
 .PHONY : token/token.cpp.i
 
 token/token.s: token/token.cpp.s
@@ -426,8 +536,7 @@ token/token.s: token/token.cpp.s
 
 # target to generate assembly for a file
 token/token.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey.dir/build.make CMakeFiles/monkey.dir/token/token.cpp.s
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_test.dir/build.make CMakeFiles/monkey_test.dir/token/token.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/monkey_lib.dir/build.make CMakeFiles/monkey_lib.dir/token/token.cpp.s
 .PHONY : token/token.cpp.s
 
 # Help Target
@@ -443,25 +552,38 @@ help:
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
 	@echo "... test"
+	@echo "... evaluator"
+	@echo "... evaluator_test"
 	@echo "... gtest"
 	@echo "... gtest_main"
 	@echo "... monkey"
+	@echo "... monkey_lib"
 	@echo "... monkey_test"
+	@echo "... object"
 	@echo "... ast/ast.o"
 	@echo "... ast/ast.i"
 	@echo "... ast/ast.s"
+	@echo "... evaluator/evaluator.o"
+	@echo "... evaluator/evaluator.i"
+	@echo "... evaluator/evaluator.s"
 	@echo "... lexer/lexer.o"
 	@echo "... lexer/lexer.i"
 	@echo "... lexer/lexer.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... object/object.o"
+	@echo "... object/object.i"
+	@echo "... object/object.s"
 	@echo "... parser/parser.o"
 	@echo "... parser/parser.i"
 	@echo "... parser/parser.s"
 	@echo "... repl/repl.o"
 	@echo "... repl/repl.i"
 	@echo "... repl/repl.s"
+	@echo "... tests/evaluator_test.o"
+	@echo "... tests/evaluator_test.i"
+	@echo "... tests/evaluator_test.s"
 	@echo "... tests/lexer_test.o"
 	@echo "... tests/lexer_test.i"
 	@echo "... tests/lexer_test.s"

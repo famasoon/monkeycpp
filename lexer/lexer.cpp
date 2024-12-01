@@ -137,6 +137,19 @@ namespace Lexer
     case 0:
       tok = {Token::TokenType::EOF_, ""};
       break;
+    case '"': {
+      std::string str;
+      readChar();  // 最初の " をスキップ
+      while (ch != '"' && ch != 0) {
+        str += ch;
+        readChar();
+      }
+      if (ch == '"') {
+        readChar();  // 最後の " をスキップ
+        return {Token::TokenType::STRING, str};
+      }
+      return {Token::TokenType::ILLEGAL, "unterminated string literal"};
+    }
     default:
       if (std::isalpha(ch) || ch == '_')
       {
