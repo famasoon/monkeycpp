@@ -259,10 +259,14 @@ namespace AST
   class StringLiteral : public Expression
   {
   public:
+    Token::Token token;
     std::string value;
 
-    StringLiteral(const std::string &v) : value(v) {}
-    std::string TokenLiteral() const override { return value; }
+    StringLiteral(Token::Token token, const std::string &v)
+        : token(std::move(token)), value(v) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
     std::string String() const override { return value; }
   };
 
