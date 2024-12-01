@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "../parser/parser.hpp"
+#include "../lexer/lexer.hpp"
 
 TEST(ParserTest, TestLetStatements) {
     struct TestCase {
@@ -70,4 +71,116 @@ TEST(ParserTest, TestReturnStatements) {
             << "returnStmt.TokenLiteral not 'return'. got="
             << returnStmt->TokenLiteral();
     }
+}
+
+TEST(ParserTest, TestLetStatementErrors) {
+    const std::string input = R"(
+        let = 5;
+        let x 5;
+        let 838383;
+    )";
+
+    Lexer::Lexer l(input);
+    Parser::Parser p(l);
+
+    auto program = p.ParseProgram();
+    auto errors = p.Errors();
+
+    // エラーが3つあることを確認
+    ASSERT_EQ(errors.size(), 3);
+
+    // 期待されるエラーメッセージをチェック
+    std::vector<std::string> expectedErrors = {
+        "expected next token to be IDENT, got ASSIGN instead",
+        "expected next token to be ASSIGN, got INT instead",
+        "expected next token to be IDENT, got INT instead"
+    };
+
+    for (size_t i = 0; i < errors.size(); i++) {
+        EXPECT_EQ(errors[i], expectedErrors[i]);
+    }
+}
+
+TEST(ParserTest, TestInvalidExpressionError) {
+    const std::string input = "!;";  // 無効な前置演算子の使用
+
+    Lexer::Lexer l(input);
+    Parser::Parser p(l);
+
+    auto program = p.ParseProgram();
+    auto errors = p.Errors();
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_EQ(errors[0], "no prefix parse function for BANG found");
+}
+
+TEST(ParserTest, TestMissingSemicolonError) {
+    const std::string input = R"(
+        let x = 5
+        let y = 10;
+    )";
+
+    Lexer::Lexer l(input);
+    Parser::Parser p(l);
+
+    auto program = p.ParseProgram();
+    auto errors = p.Errors();
+
+    ASSERT_GE(errors.size(), 1);
+    // セミコロンが必要なことを示すエラーメッセージが含まれているか確認
+    bool hasSemicolonError = false;
+    for (const auto& error : errors) {
+        if (error.find("semicolon") != std::string::npos) {
+            hasSemicolonError = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(hasSemicolonError);
+}
+
+TEST(ParserTest, TestReturnStatementError) {
+    const std::string input = "return";  // 値が指定されていない
+
+    Lexer::Lexer l(input);
+    Parser::Parser p(l);
+
+    auto program = p.ParseProgram();
+    auto errors = p.Errors();
+
+    ASSERT_EQ(errors.size(), 1);
+    EXPECT_TRUE(errors[0].find("return") != std::string::npos);
+}
+
+TEST(ParserTest, TestMultipleErrors) {
+    const std::string input = R"(
+        let x 5;
+        return;
+        let = 10;
+        let 838383;
+    )";
+
+    Lexer::Lexer l(input);
+    Parser::Parser p(l);
+
+    auto program = p.ParseProgram();
+    auto errors = p.Errors();
+
+    // 複数のエラーが検出されることを確認
+    ASSERT_GT(errors.size(), 2);
+
+    // エラーメッセージの内容をチェック
+    bool hasAssignError = false;
+    bool hasIdentError = false;
+
+    for (const auto& error : errors) {
+        if (error.find("ASSIGN") != std::string::npos) {
+            hasAssignError = true;
+        }
+        if (error.find("IDENT") != std::string::npos) {
+            hasIdentError = true;
+        }
+    }
+
+    EXPECT_TRUE(hasAssignError);
+    EXPECT_TRUE(hasIdentError);
 } 
