@@ -6,6 +6,7 @@
 #include <string>
 #include <functional>
 #include <unordered_map>
+#include <iostream>
 
 namespace Parser
 {
@@ -20,6 +21,10 @@ namespace Parser
     std::unique_ptr<AST::Program> ParseProgram();
     const std::vector<std::string> &Errors() const { return errors; }
 
+    // デバッグ設定
+    void setDebugMode(bool enable) { debugMode = enable; }
+    void setDebugOutput(std::ostream &out) { debugOut = &out; }
+
   private:
     Lexer::Lexer lexer;
     Token::Token curToken;
@@ -27,6 +32,15 @@ namespace Parser
     std::vector<std::string> errors;
     std::unordered_map<Token::TokenType, PrefixParseFn> prefixParseFns;
     std::unordered_map<Token::TokenType, InfixParseFn> infixParseFns;
+
+    // デバッグ関連
+    bool debugMode = false;
+    std::ostream *debugOut = &std::cout;
+    int indentLevel = 0;
+    void trace(const std::string &msg);
+    void increaseIndent() { indentLevel++; }
+    void decreaseIndent() { indentLevel--; }
+    std::string getIndent() const { return std::string(indentLevel * 2, ' '); }
 
     // 優先順位の定義
     enum class Precedence
@@ -48,7 +62,7 @@ namespace Parser
     // パーサー登録
     void registerPrefix(Token::TokenType type, PrefixParseFn fn);
     void registerInfix(Token::TokenType type, InfixParseFn fn);
-    
+
     // 優先順位関連
     Precedence peekPrecedence() const;
     Precedence curPrecedence() const;
@@ -58,7 +72,7 @@ namespace Parser
     bool curTokenIs(Token::TokenType t) const;
     bool peekTokenIs(Token::TokenType t) const;
     bool expectPeek(Token::TokenType t);
-    
+
     // エラー処理
     void peekError(Token::TokenType t);
     void registerError(const std::string &msg);

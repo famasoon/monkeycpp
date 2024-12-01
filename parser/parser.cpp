@@ -95,7 +95,8 @@ namespace Parser
 
   Parser::Precedence Parser::peekPrecedence() const
   {
-    if (auto it = precedences.find(peekToken.type); it != precedences.end())
+    auto it = precedences.find(peekToken.type);
+    if (it != precedences.end())
     {
       return it->second;
     }
@@ -104,26 +105,46 @@ namespace Parser
 
   Parser::Precedence Parser::curPrecedence() const
   {
-    if (auto it = precedences.find(curToken.type); it != precedences.end())
+    auto it = precedences.find(curToken.type);
+    if (it != precedences.end())
     {
       return it->second;
     }
     return Precedence::LOWEST;
   }
 
+  void Parser::trace(const std::string &msg)
+  {
+    if (debugMode && debugOut)
+    {
+      *debugOut << getIndent() << msg << "\n";
+    }
+  }
+
   std::unique_ptr<AST::Program> Parser::ParseProgram()
   {
+    trace("START ParseProgram");
+    increaseIndent();
+
     auto program = std::make_unique<AST::Program>();
 
     while (!curTokenIs(Token::TokenType::EOF_))
     {
+      trace("Parsing statement: " + curToken.literal);
       if (auto stmt = parseStatement())
       {
         program->statements.push_back(std::move(stmt));
+        trace("Statement parsed successfully");
+      }
+      else
+      {
+        trace("Failed to parse statement");
       }
       nextToken();
     }
 
+    decreaseIndent();
+    trace("END ParseProgram");
     return program;
   }
 
@@ -142,27 +163,47 @@ namespace Parser
 
   std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
   {
+    trace("START parseExpression with precedence: " + std::to_string(static_cast<int>(precedence)));
+    increaseIndent();
+
     auto prefix = prefixParseFns.find(curToken.type);
     if (prefix == prefixParseFns.end())
     {
       noPrefixParseFnError(curToken.type);
+      trace("No prefix parse function found for: " + Token::toString(curToken.type));
+      decreaseIndent();
       return nullptr;
     }
 
     auto leftExp = prefix->second();
     if (!leftExp)
+    {
+      trace("Failed to parse prefix expression");
+      decreaseIndent();
       return nullptr;
+    }
 
     while (!peekTokenIs(Token::TokenType::SEMICOLON) && precedence < peekPrecedence())
     {
+      trace("Found infix operator: " + peekToken.literal);
       auto infix = infixParseFns.find(peekToken.type);
       if (infix == infixParseFns.end())
-        return leftExp;
+      {
+        trace("No infix parse function found");
+        break;
+      }
 
       nextToken();
       leftExp = infix->second(std::move(leftExp));
+      if (!leftExp)
+      {
+        trace("Failed to parse infix expression");
+        break;
+      }
     }
 
+    decreaseIndent();
+    trace("END parseExpression");
     return leftExp;
   }
 
@@ -220,27 +261,48 @@ namespace Parser
 
   std::unique_ptr<AST::LetStatement> Parser::parseLetStatement()
   {
+    trace("START parseLetStatement");
+    increaseIndent();
+
     auto stmt = std::make_unique<AST::LetStatement>(curToken);
 
     if (!expectPeek(Token::TokenType::IDENT))
+    {
+      trace("Failed: expected identifier");
+      decreaseIndent();
       return nullptr;
+    }
+    trace("Found identifier: " + curToken.literal);
+
     stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.literal);
 
     if (!expectPeek(Token::TokenType::ASSIGN))
-      return nullptr;
-    nextToken();
-
-    stmt->value = parseExpression(Precedence::LOWEST);
-    if (!stmt->value)
-      return nullptr;
-
-    if (!peekTokenIs(Token::TokenType::SEMICOLON))
     {
-      registerError("Expected semicolon after let statement");
+      trace("Failed: expected assign operator");
+      decreaseIndent();
       return nullptr;
     }
     nextToken();
 
+    stmt->value = parseExpression(Precedence::LOWEST);
+    if (!stmt->value)
+    {
+      trace("Failed: could not parse expression");
+      decreaseIndent();
+      return nullptr;
+    }
+
+    if (!peekTokenIs(Token::TokenType::SEMICOLON))
+    {
+      registerError("Expected semicolon after let statement");
+      trace("Failed: expected semicolon");
+      decreaseIndent();
+      return nullptr;
+    }
+    nextToken();
+
+    decreaseIndent();
+    trace("END parseLetStatement: success");
     return stmt;
   }
 
