@@ -20,6 +20,9 @@ namespace monkey
         env->MarkAndSweep();
     }
 
+    EnvPtr getEnv() const { return env; }
+    void setEnv(EnvPtr newEnv) { env = std::move(newEnv); }
+
   private:
     EnvPtr env; // 評価器の環境
 

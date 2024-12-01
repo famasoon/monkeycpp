@@ -8,6 +8,8 @@ namespace monkey
   {
     // デバッグ用の定数
     constexpr bool DEBUG_OUTPUT = false;
+    constexpr size_t GC_THRESHOLD = 1000; // ガベージコレクションのしきい値
+    size_t allocatedObjects = 0;          // 割り当てられたオブジェクトの数
 
     // デバッグ出力用のヘルパー関数
     void debugPrint(const std::string &message)
@@ -23,12 +25,30 @@ namespace monkey
     {
       return obj != nullptr && obj->type() == ObjectType::ERROR;
     }
+
+    // オブジェクトの割り当てを追跡
+    void trackObject()
+    {
+      allocatedObjects++;
+      debugPrint("Allocated objects: " + std::to_string(allocatedObjects));
+    }
   }
 
   ObjectPtr Evaluator::eval(const AST::Node *node)
   {
     if (!node)
       return std::make_shared<Null>();
+
+    // オブジェクトの割り当てを追跡
+    trackObject();
+
+    // しきい値を超えた場合、ガベージコレクションを実行
+    if (allocatedObjects > GC_THRESHOLD)
+    {
+      debugPrint("Running garbage collection...");
+      collectGarbage();
+      allocatedObjects = 0;
+    }
 
     // リテラルの評価
     if (auto *intLiteral = dynamic_cast<const AST::IntegerLiteral *>(node))
@@ -329,6 +349,8 @@ namespace monkey
       }
     }
 
+    // 関数オブジェクトの作成を追跡
+    trackObject();
     return std::make_shared<Function>(params, node->body.get(), env);
   }
 
@@ -382,6 +404,8 @@ namespace monkey
       return value;
     }
 
+    // 変数をバインドする際にも追跡
+    trackObject();
     return env->Set(letStmt->name->value, value);
   }
 
