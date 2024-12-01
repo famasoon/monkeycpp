@@ -14,6 +14,10 @@ namespace monkey
     ObjectPtr eval(const AST::Node* node);
 
   private:
+    ObjectPtr evalProgram(const AST::Program* program);
+    ObjectPtr evalStatement(const AST::Statement* statement);
+    ObjectPtr evalExpressionStatement(const AST::ExpressionStatement* statement);
+
     ObjectPtr evalIntegerLiteral(const AST::IntegerLiteral* node);
     ObjectPtr evalStringLiteral(const AST::StringLiteral* node);
     ObjectPtr evalBooleanLiteral(const AST::BooleanLiteral* node);

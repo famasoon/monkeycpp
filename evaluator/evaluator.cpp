@@ -11,6 +11,16 @@ namespace monkey
       return std::make_shared<Null>();
     }
 
+    if (const auto *program = dynamic_cast<const AST::Program *>(node))
+    {
+      return evalProgram(program);
+    }
+
+    if (const auto *expressionStatement = dynamic_cast<const AST::ExpressionStatement *>(node))
+    {
+      return evalExpressionStatement(expressionStatement);
+    }
+
     if (const auto *integerLiteral = dynamic_cast<const AST::IntegerLiteral *>(node))
     {
       return evalIntegerLiteral(integerLiteral);
@@ -18,6 +28,10 @@ namespace monkey
     if (const auto *booleanLiteral = dynamic_cast<const AST::BooleanLiteral *>(node))
     {
       return evalBooleanLiteral(booleanLiteral);
+    }
+    if (const auto *stringLiteral = dynamic_cast<const AST::StringLiteral *>(node))
+    {
+      return evalStringLiteral(stringLiteral);
     }
     if (const auto *prefixExpression = dynamic_cast<const AST::PrefixExpression *>(node))
     {
@@ -29,6 +43,46 @@ namespace monkey
     }
 
     return std::make_shared<Null>();
+  }
+
+  ObjectPtr Evaluator::evalProgram(const AST::Program *program)
+  {
+    if (!program)
+      return std::make_shared<Null>();
+
+    ObjectPtr result = std::make_shared<Null>();
+
+    for (const auto &statement : program->statements)
+    {
+      result = evalStatement(statement.get());
+
+      if (auto error = std::dynamic_pointer_cast<Error>(result))
+      {
+        return error;
+      }
+    }
+
+    return result;
+  }
+
+  ObjectPtr Evaluator::evalStatement(const AST::Statement *statement)
+  {
+    if (!statement)
+      return std::make_shared<Null>();
+
+    if (const auto *expressionStatement = dynamic_cast<const AST::ExpressionStatement *>(statement))
+    {
+      return evalExpressionStatement(expressionStatement);
+    }
+
+    return std::make_shared<Null>();
+  }
+
+  ObjectPtr Evaluator::evalExpressionStatement(const AST::ExpressionStatement *statement)
+  {
+    if (!statement)
+      return std::make_shared<Null>();
+    return eval(statement->expression.get());
   }
 
   ObjectPtr Evaluator::evalIntegerLiteral(const AST::IntegerLiteral *node)
