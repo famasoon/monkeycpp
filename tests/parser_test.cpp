@@ -20,8 +20,8 @@ namespace
 
   ParseResult ParseInput(const std::string &input)
   {
-    auto lexer = Lexer::Lexer(input);
-    auto parser = std::make_unique<Parser::Parser>(std::move(lexer));
+    Lexer::Lexer lexer(input);
+    auto parser = std::make_unique<Parser::Parser>(std::make_unique<Lexer::Lexer>(std::move(lexer)));
     auto parser_ptr = parser.get();
     auto program = parser_ptr->ParseProgram();
     return ParseResult(std::move(program), std::move(parser));
@@ -87,28 +87,39 @@ protected:
 // Let文のテスト
 TEST_F(ParserTest, TestLetStatements)
 {
-  std::vector<LetStatementTestCase> tests = {
-      {"let x = 5;", "x"},
-      {"let y = 10;", "y"},
-      {"let foobar = 838383;", "foobar"},
-  };
+  std::string input = R"(
+        let x = 5;
+        let y = 10;
+        let foobar = 838383;
+    )";
 
-  for (const auto &tt : tests)
-  {
-    Lexer::Lexer lexer(tt.input);
-    Parser::Parser parser(lexer);
-    auto program = parser.ParseProgram();
+  Lexer::Lexer lexer(input);
+  Parser::Parser parser(std::make_unique<Lexer::Lexer>(std::move(lexer)));
 
-    ASSERT_NE(program, nullptr) << "ParseProgram() returned nullptr";
-    CheckParserErrors(parser);
-    ASSERT_EQ(program->statements.size(), 1);
+  auto program = parser.ParseProgram();
+  CheckParserErrors(parser);
 
-    auto stmt = dynamic_cast<AST::LetStatement *>(program->statements[0].get());
-    ASSERT_NE(stmt, nullptr) << "Not a LetStatement";
-    EXPECT_EQ(stmt->TokenLiteral(), "let");
-    EXPECT_EQ(stmt->name->value, tt.expectedIdentifier);
-    EXPECT_EQ(stmt->name->TokenLiteral(), tt.expectedIdentifier);
-  }
+  ASSERT_NE(program, nullptr) << "ParseProgram() returned nullptr";
+  CheckParserErrors(parser);
+  ASSERT_EQ(program->statements.size(), 3);
+
+  auto stmt1 = dynamic_cast<AST::LetStatement *>(program->statements[0].get());
+  ASSERT_NE(stmt1, nullptr) << "Not a LetStatement";
+  EXPECT_EQ(stmt1->TokenLiteral(), "let");
+  EXPECT_EQ(stmt1->name->value, "x");
+  EXPECT_EQ(stmt1->name->TokenLiteral(), "x");
+
+  auto stmt2 = dynamic_cast<AST::LetStatement *>(program->statements[1].get());
+  ASSERT_NE(stmt2, nullptr) << "Not a LetStatement";
+  EXPECT_EQ(stmt2->TokenLiteral(), "let");
+  EXPECT_EQ(stmt2->name->value, "y");
+  EXPECT_EQ(stmt2->name->TokenLiteral(), "y");
+
+  auto stmt3 = dynamic_cast<AST::LetStatement *>(program->statements[2].get());
+  ASSERT_NE(stmt3, nullptr) << "Not a LetStatement";
+  EXPECT_EQ(stmt3->TokenLiteral(), "let");
+  EXPECT_EQ(stmt3->name->value, "foobar");
+  EXPECT_EQ(stmt3->name->TokenLiteral(), "foobar");
 }
 
 // エラー処理のテスト（修正版）
@@ -328,4 +339,43 @@ TEST_F(ParserTest, TestCallExpressionParameter)
       EXPECT_EQ(argStr, tt.expectedArgs[i]);
     }
   }
+}
+
+TEST_F(ParserTest, TestReturnStatements)
+{
+  std::string input = R"(
+        return 5;
+        return 10;
+        return 993322;
+    )";
+
+  Lexer::Lexer lexer(input);
+  Parser::Parser parser(std::make_unique<Lexer::Lexer>(std::move(lexer)));
+
+  auto program = parser.ParseProgram();
+  CheckParserErrors(parser);
+
+  ASSERT_NE(program, nullptr) << "ParseProgram() returned nullptr";
+  CheckParserErrors(parser);
+  ASSERT_EQ(program->statements.size(), 3);
+
+  auto stmt1 = dynamic_cast<AST::ReturnStatement *>(program->statements[0].get());
+  ASSERT_NE(stmt1, nullptr) << "Not a ReturnStatement";
+  EXPECT_EQ(stmt1->TokenLiteral(), "return");
+
+  auto value1 = dynamic_cast<AST::IntegerLiteral *>(stmt1->returnValue.get());
+  ASSERT_NE(value1, nullptr);
+  EXPECT_EQ(value1->value, 5);
+
+  auto stmt2 = dynamic_cast<AST::ReturnStatement *>(program->statements[1].get());
+  ASSERT_NE(stmt2, nullptr) << "Not a ReturnStatement";
+  auto value2 = dynamic_cast<AST::IntegerLiteral *>(stmt2->returnValue.get());
+  ASSERT_NE(value2, nullptr);
+  EXPECT_EQ(value2->value, 10);
+
+  auto stmt3 = dynamic_cast<AST::ReturnStatement *>(program->statements[2].get());
+  ASSERT_NE(stmt3, nullptr) << "Not a ReturnStatement";
+  auto value3 = dynamic_cast<AST::IntegerLiteral *>(stmt3->returnValue.get());
+  ASSERT_NE(value3, nullptr);
+  EXPECT_EQ(value3->value, 993322);
 }

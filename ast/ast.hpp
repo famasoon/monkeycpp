@@ -174,6 +174,21 @@ namespace AST
     }
   };
 
+  // BooleanLiteralクラスを追加
+  class BooleanLiteral : public Expression
+  {
+  public:
+    Token::Token token;
+    bool value;
+
+    BooleanLiteral(Token::Token token, bool value)
+        : token(std::move(token)), value(value) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override { return token.literal; }
+  };
+
   // Function リテラルを最後に定義
   class FunctionLiteral : public Expression
   {

@@ -15,9 +15,9 @@ namespace Parser
       {Token::TokenType::LPAREN, Precedence::CALL},
   };
 
-  Parser::Parser(Lexer::Lexer lexer) : lexer(std::move(lexer)),
-                                       curToken(Token::TokenType::ILLEGAL, ""),
-                                       peekToken(Token::TokenType::ILLEGAL, "")
+  Parser::Parser(std::unique_ptr<Lexer::Lexer> lexer) : lexer(std::move(lexer)),
+                                                        curToken(Token::TokenType::ILLEGAL, ""),
+                                                        peekToken(Token::TokenType::ILLEGAL, "")
   {
     initParseFns();
     nextToken();
@@ -28,12 +28,11 @@ namespace Parser
   {
     registerPrefix(Token::TokenType::IDENT, [this]
                    { return parseIdentifier(); });
-    registerPrefix(Token::TokenType::INT, [this]
-                   { return parseIntegerLiteral(); });
-    registerPrefix(Token::TokenType::BANG, [this]
-                   { return parsePrefixExpression(); });
-    registerPrefix(Token::TokenType::MINUS, [this]
-                   { return parsePrefixExpression(); });
+    registerPrefix(Token::TokenType::INT, std::bind(&Parser::parseIntegerLiteral, this));
+    registerPrefix(Token::TokenType::BANG, std::bind(&Parser::parsePrefixExpression, this));
+    registerPrefix(Token::TokenType::MINUS, std::bind(&Parser::parsePrefixExpression, this));
+    registerPrefix(Token::TokenType::TRUE, std::bind(&Parser::parseBoolean, this));
+    registerPrefix(Token::TokenType::FALSE, std::bind(&Parser::parseBoolean, this));
     registerPrefix(Token::TokenType::FUNCTION, [this]
                    { return parseFunctionLiteral(); });
 
@@ -66,7 +65,7 @@ namespace Parser
   void Parser::nextToken()
   {
     curToken = peekToken;
-    peekToken = lexer.NextToken();
+    peekToken = lexer->NextToken();
   }
 
   bool Parser::curTokenIs(Token::TokenType t) const { return curToken.type == t; }
@@ -470,6 +469,13 @@ namespace Parser
     }
 
     return args;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseBoolean()
+  {
+    return std::make_unique<AST::BooleanLiteral>(
+        curToken,
+        curTokenIs(Token::TokenType::TRUE));
   }
 
 } // namespace Parser

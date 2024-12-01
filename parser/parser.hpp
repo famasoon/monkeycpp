@@ -17,7 +17,7 @@ namespace Parser
     using InfixParseFn = std::function<std::unique_ptr<AST::Expression>(std::unique_ptr<AST::Expression>)>;
 
   public:
-    explicit Parser(Lexer::Lexer lexer);
+    explicit Parser(std::unique_ptr<Lexer::Lexer> lexer);
     std::unique_ptr<AST::Program> ParseProgram();
     const std::vector<std::string> &Errors() const { return errors; }
 
@@ -26,7 +26,7 @@ namespace Parser
     void setDebugOutput(std::ostream &out) { debugOut = &out; }
 
   private:
-    Lexer::Lexer lexer;
+    std::unique_ptr<Lexer::Lexer> lexer;
     Token::Token curToken;
     Token::Token peekToken;
     std::vector<std::string> errors;
@@ -95,6 +95,7 @@ namespace Parser
     std::vector<std::unique_ptr<AST::Identifier>> parseFunctionParameters();
     std::unique_ptr<AST::Expression> parseCallExpression(std::unique_ptr<AST::Expression> function);
     std::vector<std::unique_ptr<AST::Expression>> parseExpressionList(Token::TokenType end);
+    std::unique_ptr<AST::Expression> parseBoolean();
   };
 
 } // namespace Parser

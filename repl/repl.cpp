@@ -120,7 +120,7 @@ namespace Repl
       }
 
       Lexer::Lexer lexer(line);
-      Parser::Parser parser(lexer);
+      Parser::Parser parser(std::make_unique<Lexer::Lexer>(std::move(lexer)));
       parser.setDebugMode(debugMode);
       parser.setDebugOutput(out);
 
