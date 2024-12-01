@@ -1,36 +1,37 @@
 #include "lexer.hpp"
 #include <cctype>
+#include <unordered_map>
 
 namespace Lexer
 {
 
-  Lexer::Lexer(const std::string &input)
-      : input(input), position(0), readPosition(0), ch(0)
+  namespace
+  {
+    const std::unordered_map<std::string, Token::TokenType> keywords = {
+        {"fn", Token::TokenType::FUNCTION},
+        {"let", Token::TokenType::LET},
+        {"true", Token::TokenType::TRUE},
+        {"false", Token::TokenType::FALSE},
+        {"if", Token::TokenType::IF},
+        {"else", Token::TokenType::ELSE},
+        {"return", Token::TokenType::RETURN}};
+  }
+
+  Lexer::Lexer(std::string input)
+      : input(std::move(input)), position(0), readPosition(0), ch(0)
   {
     readChar();
   }
 
   void Lexer::readChar()
   {
-    if (readPosition >= input.length())
-    {
-      ch = 0;
-    }
-    else
-    {
-      ch = input[readPosition];
-    }
-    position = readPosition;
-    readPosition++;
+    ch = (readPosition >= input.length()) ? 0 : input[readPosition];
+    position = readPosition++;
   }
 
   char Lexer::peekChar() const
   {
-    if (readPosition >= input.length())
-    {
-      return 0;
-    }
-    return input[readPosition];
+    return (readPosition >= input.length()) ? 0 : input[readPosition];
   }
 
   std::string Lexer::readIdentifier()
@@ -61,6 +62,12 @@ namespace Lexer
     }
   }
 
+  Token::TokenType Lexer::lookupIdent(const std::string &ident) const
+  {
+    auto it = keywords.find(ident);
+    return it != keywords.end() ? it->second : Token::TokenType::IDENT;
+  }
+
   Token::Token Lexer::NextToken()
   {
     skipWhitespace();
@@ -73,101 +80,73 @@ namespace Lexer
       if (peekChar() == '=')
       {
         readChar();
-        tok = Token::Token(Token::TokenType::EQ, "==");
+        tok = {Token::TokenType::EQ, "=="};
       }
       else
       {
-        tok = Token::Token(Token::TokenType::ASSIGN, "=");
+        tok = {Token::TokenType::ASSIGN, "="};
       }
       break;
     case '+':
-      tok = Token::Token(Token::TokenType::PLUS, "+");
+      tok = {Token::TokenType::PLUS, "+"};
       break;
     case '-':
-      tok = Token::Token(Token::TokenType::MINUS, "-");
+      tok = {Token::TokenType::MINUS, "-"};
       break;
     case '!':
       if (peekChar() == '=')
       {
         readChar();
-        tok = Token::Token(Token::TokenType::NOT_EQ, "!=");
+        tok = {Token::TokenType::NOT_EQ, "!="};
       }
       else
       {
-        tok = Token::Token(Token::TokenType::BANG, "!");
+        tok = {Token::TokenType::BANG, "!"};
       }
       break;
     case '*':
-      tok = Token::Token(Token::TokenType::ASTERISK, "*");
+      tok = {Token::TokenType::ASTERISK, "*"};
       break;
     case '/':
-      tok = Token::Token(Token::TokenType::SLASH, "/");
+      tok = {Token::TokenType::SLASH, "/"};
       break;
     case '<':
-      tok = Token::Token(Token::TokenType::LT, "<");
+      tok = {Token::TokenType::LT, "<"};
       break;
     case '>':
-      tok = Token::Token(Token::TokenType::GT, ">");
+      tok = {Token::TokenType::GT, ">"};
       break;
     case ';':
-      tok = Token::Token(Token::TokenType::SEMICOLON, ";");
+      tok = {Token::TokenType::SEMICOLON, ";"};
       break;
     case '(':
-      tok = Token::Token(Token::TokenType::LPAREN, "(");
+      tok = {Token::TokenType::LPAREN, "("};
       break;
     case ')':
-      tok = Token::Token(Token::TokenType::RPAREN, ")");
+      tok = {Token::TokenType::RPAREN, ")"};
       break;
     case ',':
-      tok = Token::Token(Token::TokenType::COMMA, ",");
+      tok = {Token::TokenType::COMMA, ","};
       break;
     case '{':
-      tok = Token::Token(Token::TokenType::LBRACE, "{");
+      tok = {Token::TokenType::LBRACE, "{"};
       break;
     case '}':
-      tok = Token::Token(Token::TokenType::RBRACE, "}");
+      tok = {Token::TokenType::RBRACE, "}"};
       break;
     case 0:
-      tok = Token::Token(Token::TokenType::EOF_, "");
+      tok = {Token::TokenType::EOF_, ""};
       break;
     default:
       if (std::isalpha(ch) || ch == '_')
       {
         auto literal = readIdentifier();
-        // キーワードの判定は別の関数に分けることもできます
-        if (literal == "fn")
-        {
-          return Token::Token(Token::TokenType::FUNCTION, literal);
-        }
-        else if (literal == "let")
-        {
-          return Token::Token(Token::TokenType::LET, literal);
-        }
-        else if (literal == "true")
-        {
-          return Token::Token(Token::TokenType::TRUE, literal);
-        }
-        else if (literal == "false")
-        {
-          return Token::Token(Token::TokenType::FALSE, literal);
-        }
-        else if (literal == "if")
-        {
-          return Token::Token(Token::TokenType::IF, literal);
-        }
-        else if (literal == "else")
-        {
-          return Token::Token(Token::TokenType::ELSE, literal);
-        }
-        else if (literal == "return")
-        {
-          return Token::Token(Token::TokenType::RETURN, literal);
-        }
-        return Token::Token(Token::TokenType::IDENT, literal);
+        auto type = lookupIdent(literal);
+        return {type, literal};
       }
-      else if (std::isdigit(ch))
+      if (std::isdigit(ch))
       {
-        return Token::Token(Token::TokenType::INT, readNumber());
+        return {Token::TokenType::INT, readNumber()};
       }
       break;
     }

@@ -1,8 +1,10 @@
 #pragma once
 #include "../token/token.hpp"
 #include <string>
+
 namespace Lexer
 {
+
   class Lexer
   {
   private:
@@ -16,9 +18,10 @@ namespace Lexer
     std::string readIdentifier();
     std::string readNumber();
     void skipWhitespace();
+    Token::TokenType lookupIdent(const std::string &ident) const;
 
   public:
-    explicit Lexer(const std::string &input);
+    explicit Lexer(std::string input);
     Token::Token NextToken();
   };
 
