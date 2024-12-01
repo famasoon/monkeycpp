@@ -17,11 +17,10 @@ namespace AST
     std::string out;
     for (size_t i = 0; i < statements.size(); i++)
     {
-        if (!statements[i]) continue;  // nullチェック
-        
-        out += statements[i]->String();
-        
-        // セミコロンは追加しない（各文の実装で必要に応じて追加する）
+      if (!statements[i])
+        continue;
+
+      out += statements[i]->String();
     }
     return out;
   }
@@ -104,8 +103,9 @@ namespace AST
 
   std::string ExpressionStatement::String() const
   {
-    if (!expression) return "";
-    
+    if (!expression)
+      return "";
+
     // セミコロンを含めない文字列表現を返す
     return expression->String();
   }

@@ -6,8 +6,7 @@
 
 namespace AST
 {
-
-  // 全てのノードのベースとなるインターフェース
+  // 基本インターフェース
   class Node
   {
   public:
@@ -16,7 +15,6 @@ namespace AST
     virtual std::string String() const = 0;
   };
 
-  // 文のインターフェース
   class Statement : public Node
   {
   public:
@@ -24,7 +22,6 @@ namespace AST
     virtual void statementNode() = 0;
   };
 
-  // 式のインターフェース
   class Expression : public Node
   {
   public:
@@ -40,6 +37,33 @@ namespace AST
 
     std::string TokenLiteral() const override;
     std::string String() const override;
+  };
+
+  // ブロック文を先に定義
+  class BlockStatement : public Statement
+  {
+  public:
+    Token::Token token; // '{' トークン
+    std::vector<std::unique_ptr<Statement>> statements;
+
+    BlockStatement(Token::Token token)
+        : token(std::move(token)) {}
+
+    void statementNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override
+    {
+      std::string out = "{ ";
+      for (const auto &stmt : statements)
+      {
+        if (stmt)
+        {
+          out += stmt->String();
+        }
+      }
+      out += " }";
+      return out;
+    }
   };
 
   // 識別子を表すクラス
@@ -99,7 +123,8 @@ namespace AST
     std::string String() const override;
   };
 
-  class IntegerLiteral : public Expression {
+  class IntegerLiteral : public Expression
+  {
   public:
     Token::Token token;
     int64_t value;
@@ -112,7 +137,8 @@ namespace AST
     std::string String() const override { return token.literal; }
   };
 
-  class PrefixExpression : public Expression {
+  class PrefixExpression : public Expression
+  {
   public:
     Token::Token token;
     std::string op;
@@ -123,12 +149,14 @@ namespace AST
 
     void expressionNode() override {}
     std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override {
-        return "(" + op + right->String() + ")";
+    std::string String() const override
+    {
+      return "(" + op + right->String() + ")";
     }
   };
 
-  class InfixExpression : public Expression {
+  class InfixExpression : public Expression
+  {
   public:
     Token::Token token;
     std::string op;
@@ -140,8 +168,45 @@ namespace AST
 
     void expressionNode() override {}
     std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override {
-        return "(" + left->String() + op + right->String() + ")";
+    std::string String() const override
+    {
+      return "(" + left->String() + op + right->String() + ")";
+    }
+  };
+
+  // Function リテラルを最後に定義
+  class FunctionLiteral : public Expression
+  {
+  public:
+    Token::Token token;
+    std::vector<std::unique_ptr<Identifier>> parameters;
+    std::unique_ptr<BlockStatement> body;
+
+    FunctionLiteral(Token::Token token)
+        : token(std::move(token)) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override
+    {
+      std::string out = token.literal + "(";
+
+      for (size_t i = 0; i < parameters.size(); i++)
+      {
+        out += parameters[i]->String();
+        if (i < parameters.size() - 1)
+        {
+          out += ", ";
+        }
+      }
+
+      out += ") ";
+      if (body)
+      {
+        out += body->String();
+      }
+
+      return out;
     }
   };
 

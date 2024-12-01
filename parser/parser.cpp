@@ -34,6 +34,8 @@ namespace Parser
                    { return parsePrefixExpression(); });
     registerPrefix(Token::TokenType::MINUS, [this]
                    { return parsePrefixExpression(); });
+    registerPrefix(Token::TokenType::FUNCTION, [this]
+                   { return parseFunctionLiteral(); });
 
     const std::vector<Token::TokenType> infixOps = {
         Token::TokenType::PLUS, Token::TokenType::MINUS,
@@ -340,6 +342,80 @@ namespace Parser
     }
 
     return stmt;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseFunctionLiteral()
+  {
+    trace("START parseFunctionLiteral");
+    increaseIndent();
+
+    auto lit = std::make_unique<AST::FunctionLiteral>(curToken);
+
+    if (!expectPeek(Token::TokenType::LPAREN))
+    {
+      decreaseIndent();
+      return nullptr;
+    }
+
+    lit->parameters = parseFunctionParameters();
+
+    if (!expectPeek(Token::TokenType::LBRACE))
+    {
+      decreaseIndent();
+      return nullptr;
+    }
+
+    lit->body = parseBlockStatement();
+
+    decreaseIndent();
+    trace("END parseFunctionLiteral");
+    return lit;
+  }
+
+  std::vector<std::unique_ptr<AST::Identifier>> Parser::parseFunctionParameters()
+  {
+    std::vector<std::unique_ptr<AST::Identifier>> params;
+
+    if (peekTokenIs(Token::TokenType::RPAREN))
+    {
+      nextToken();
+      return params;
+    }
+
+    nextToken();
+    params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.literal));
+
+    while (peekTokenIs(Token::TokenType::COMMA))
+    {
+      nextToken(); // COMMA
+      nextToken(); // パラメータ
+      params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.literal));
+    }
+
+    if (!expectPeek(Token::TokenType::RPAREN))
+    {
+      return std::vector<std::unique_ptr<AST::Identifier>>();
+    }
+
+    return params;
+  }
+
+  std::unique_ptr<AST::BlockStatement> Parser::parseBlockStatement()
+  {
+    auto block = std::make_unique<AST::BlockStatement>(curToken);
+
+    nextToken();
+
+    while (!curTokenIs(Token::TokenType::RBRACE) && !curTokenIs(Token::TokenType::EOF_))
+    {
+      if (auto stmt = parseStatement())
+      {
+        block->statements.push_back(std::move(stmt));
+      }
+      nextToken();
+    }
+
+    return block;
   }
 
 } // namespace Parser

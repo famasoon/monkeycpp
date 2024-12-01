@@ -195,3 +195,63 @@ TEST_F(ParserTest, TestPrefixExpressions)
 }
 
 // ... 他のテストケースも同様にリファクタリング ...
+
+TEST_F(ParserTest, TestFunctionLiteral)
+{
+  const std::string input = "fn(x, y) { x + y; }";
+
+  auto [program, parser_owner, parser] = ParseInput(input);
+  ASSERT_NE(program.get(), nullptr);
+  ASSERT_TRUE(parser->Errors().empty()) << "Parser errors: " << parser->Errors()[0];
+  ASSERT_EQ(program->statements.size(), 1);
+
+  auto stmt = dynamic_cast<AST::ExpressionStatement *>(program->statements[0].get());
+  ASSERT_NE(stmt, nullptr);
+
+  auto func = dynamic_cast<AST::FunctionLiteral *>(stmt->expression.get());
+  ASSERT_NE(func, nullptr);
+
+  ASSERT_EQ(func->parameters.size(), 2);
+  EXPECT_EQ(func->parameters[0]->value, "x");
+  EXPECT_EQ(func->parameters[1]->value, "y");
+
+  ASSERT_EQ(func->body->statements.size(), 1);
+  auto bodyStmt = dynamic_cast<AST::ExpressionStatement *>(func->body->statements[0].get());
+  ASSERT_NE(bodyStmt, nullptr);
+
+  auto infix = dynamic_cast<AST::InfixExpression *>(bodyStmt->expression.get());
+  ASSERT_NE(infix, nullptr);
+  EXPECT_EQ(infix->op, "+");
+}
+
+TEST_F(ParserTest, TestFunctionParameterParsing)
+{
+  struct Test
+  {
+    std::string input;
+    std::vector<std::string> expectedParams;
+  };
+
+  std::vector<Test> tests = {
+      {"fn() {};", {}},
+      {"fn(x) {};", {"x"}},
+      {"fn(x, y, z) {};", {"x", "y", "z"}},
+  };
+
+  for (const auto &tt : tests)
+  {
+    auto [program, parser_owner, parser] = ParseInput(tt.input);
+    ASSERT_NE(program.get(), nullptr);
+    ASSERT_TRUE(parser->Errors().empty()) << "Parser errors: " << parser->Errors()[0];
+
+    auto stmt = dynamic_cast<AST::ExpressionStatement *>(program->statements[0].get());
+    auto func = dynamic_cast<AST::FunctionLiteral *>(stmt->expression.get());
+
+    ASSERT_EQ(func->parameters.size(), tt.expectedParams.size());
+
+    for (size_t i = 0; i < tt.expectedParams.size(); i++)
+    {
+      EXPECT_EQ(func->parameters[i]->value, tt.expectedParams[i]);
+    }
+  }
+}
