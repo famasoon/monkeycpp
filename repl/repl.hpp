@@ -1,8 +1,8 @@
 #pragma once
-#include <istream>
-#include <ostream>
+#include <string>
+#include "../lexer/lexer.hpp"
 
-namespace Repl
-{
-  void Start(std::istream &in, std::ostream &out);
+namespace Repl {
+  const std::string PROMPT = ">> ";
+  void Start();
 }

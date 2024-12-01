@@ -1,17 +1,28 @@
 #include "repl.hpp"
-#include <istream>
-#include <lexer.hpp>
+#include <iostream>
+#include <string>
 
-#define PROMPT ">> "
+namespace Repl {
 
-namespace Repl
-{
-  void Start(std::istream &in, std::ostream &out)
-  {
-    Lexer::Lexer lexer(PROMPT);
-    for (Token::Token tok = lexer.NextToken(); tok != Token::TokenType::EOF_; tok = lexer.NextToken())
-    {
-      out << tok.getType() << std::endl;
+void Start() {
+  std::string line;
+
+  while (true) {
+    std::cout << PROMPT;
+    
+    if (!std::getline(std::cin, line)) {
+      return;
+    }
+
+    Lexer::Lexer lexer(line);
+    
+    for (Token::Token tok = lexer.NextToken(); 
+         tok.type != Token::TokenType::EOF_; 
+         tok = lexer.NextToken()) {
+      std::cout << "{ Type: " << tok.getType() 
+                << ", Literal: " << tok.literal << " }\n";
     }
   }
 }
+
+} // namespace Repl
