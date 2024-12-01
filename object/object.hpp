@@ -1,16 +1,24 @@
 #pragma once
 #include <string>
 #include <memory>
-#include <variant>
-#include <vector>
-#include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>  // std::function用
+#include <variant>     // std::variant用
 #include "../ast/ast.hpp"
 
-namespace monkey {
+namespace monkey
+{
 
-enum class ObjectType {
+  // 前方宣言
+  class Object;
+  using ObjectPtr = std::shared_ptr<Object>;
+  using EnvPtr = std::shared_ptr<class Environment>;
+  using WeakEnvPtr = std::weak_ptr<class Environment>;
+
+  // オブジェクトの種類を表す列挙型
+  enum class ObjectType
+  {
     INTEGER,
     BOOLEAN,
     STRING,
@@ -21,77 +29,91 @@ enum class ObjectType {
     BUILTIN,
     ARRAY,
     HASH
-};
+  };
 
-class Object;
-class Environment;
-using ObjectPtr = std::shared_ptr<Object>;
-using EnvPtr = std::shared_ptr<Environment>;
-using WeakEnvPtr = std::weak_ptr<Environment>;
-
-class Object {
-public:
+  // 基底クラス
+  class Object
+  {
+  public:
     virtual ~Object() = default;
     virtual ObjectType type() const = 0;
     virtual std::string inspect() const = 0;
-};
+  };
 
-class Integer : public Object {
-private:
+  // 整数オブジェクト
+  class Integer : public Object
+  {
+  private:
     int64_t value_;
-public:
+
+  public:
     explicit Integer(int64_t value);
     ObjectType type() const override;
     std::string inspect() const override;
     int64_t value() const;
-};
+  };
 
-class Boolean : public Object {
-private:
+  // 真偽値オブジェクト
+  class Boolean : public Object
+  {
+  private:
     bool value_;
-public:
+
+  public:
     explicit Boolean(bool value);
     ObjectType type() const override;
     std::string inspect() const override;
     bool value() const;
-};
+  };
 
-class String : public Object {
-private:
+  // 文字列オブジェクト
+  class String : public Object
+  {
+  private:
     std::string value_;
-public:
+
+  public:
     explicit String(std::string value);
     ObjectType type() const override;
     std::string inspect() const override;
-    const std::string& getValue() const;
-};
+    const std::string &getValue() const;
+  };
 
-class Null : public Object {
-public:
+  // Nullオブジェクト
+  class Null : public Object
+  {
+  public:
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-class Error : public Object {
-private:
+  // エラーオブジェクト
+  class Error : public Object
+  {
+  private:
     std::string message_;
-public:
+
+  public:
     explicit Error(const std::string& message);
     ObjectType type() const override;
     std::string inspect() const override;
     const std::string& message() const;
-};
+  };
 
-class ReturnValue : public Object {
-public:
+  // 戻り値オブジェクト
+  class ReturnValue : public Object
+  {
+  public:
     ObjectPtr value;
     explicit ReturnValue(ObjectPtr v);
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-class Function : public Object {
-public:
+  // 関数オブジェクト
+  class Function : public Object
+  {
+  public:
     std::vector<std::string> parameters;
     const AST::BlockStatement* body;
     EnvPtr env;
@@ -99,58 +121,70 @@ public:
     Function(std::vector<std::string> params, const AST::BlockStatement* b, EnvPtr e);
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-using BuiltinFunction = std::function<ObjectPtr(const std::vector<ObjectPtr>&)>;
+  // ビルトイン関数の型定義
+  using BuiltinFunction = std::function<ObjectPtr(const std::vector<ObjectPtr>&)>;
 
-class Builtin : public Object {
-public:
+  // ビルトイン関数オブジェクト
+  class Builtin : public Object
+  {
+  public:
     BuiltinFunction fn;
     explicit Builtin(BuiltinFunction function);
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-class Array : public Object {
-public:
+  // 配列オブジェクト
+  class Array : public Object
+  {
+  public:
     std::vector<ObjectPtr> elements;
     explicit Array(std::vector<ObjectPtr> elems);
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-using HashKey = std::variant<int64_t, bool, std::string>;
+  // ハッシュのキー型
+  using HashKey = std::variant<int64_t, bool, std::string>;
 
-class HashPair {
-public:
+  // ハッシュペア
+  class HashPair
+  {
+  public:
     ObjectPtr key;
     ObjectPtr value;
     HashPair(ObjectPtr k, ObjectPtr v);
-};
+  };
 
-class Hash : public Object {
-public:
+  // ハッシュオブジェクト
+  class Hash : public Object
+  {
+  public:
     std::unordered_map<HashKey, HashPair> pairs;
     ObjectType type() const override;
     std::string inspect() const override;
-};
+  };
 
-class Environment : public std::enable_shared_from_this<Environment> {
-private:
+  // 環境クラス
+  class Environment : public std::enable_shared_from_this<Environment>
+  {
+  private:
     std::unordered_map<std::string, ObjectPtr> store;
     WeakEnvPtr outer;
 
-public:
+  public:
     static EnvPtr NewEnvironment();
     static EnvPtr NewEnclosedEnvironment(EnvPtr outer);
     ObjectPtr Get(const std::string& name);
     ObjectPtr Set(const std::string& name, ObjectPtr val);
     void MarkAndSweep();
 
-private:
+  private:
     void Mark(std::unordered_set<Object*>& marked);
     void MarkObject(Object* obj, std::unordered_set<Object*>& marked);
     void Sweep(const std::unordered_set<Object*>& marked);
-};
+  };
 
 } // namespace monkey

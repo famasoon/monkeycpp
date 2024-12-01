@@ -2,7 +2,6 @@
 #include "../lexer/lexer.hpp"
 #include "../parser/parser.hpp"
 #include "../evaluator/evaluator.hpp"
-#include <string>
 #include <iostream>
 
 namespace monkey
@@ -16,6 +15,7 @@ namespace monkey
   private:
     static const std::string PROMPT;
     static void printParserErrors(std::ostream &out, const std::vector<std::string> &errors);
+    static ObjectPtr evaluateInput(const std::string &input, Evaluator &evaluator);
   };
 
 } // namespace monkey

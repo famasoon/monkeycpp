@@ -477,4 +477,12 @@ namespace monkey
     return eval(exprStmt->expression.get());
   }
 
+  Evaluator::Evaluator() : env(Environment::NewEnvironment()) {}
+
+  void Evaluator::collectGarbage() {
+    if (env) {
+      env->MarkAndSweep();
+    }
+  }
+
 } // namespace monkey
