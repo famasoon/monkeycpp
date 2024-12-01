@@ -1,161 +1,71 @@
 #include "evaluator.hpp"
-#include "../ast/ast.hpp"
 #include <iostream>
 
 namespace monkey
 {
 
-  void debugPrintAST(const AST::Node *node, int indent = 0)
+  namespace
   {
-    std::string indentStr(indent * 2, ' ');
+    // デバッグ用の定数
+    constexpr bool DEBUG_OUTPUT = false;
 
-    if (const auto *program = dynamic_cast<const AST::Program *>(node))
+    // デバッグ出力用のヘルパー関数
+    void debugPrint(const std::string &message)
     {
-      std::cout << indentStr << "Program {\n";
-      for (const auto &stmt : program->statements)
+      if (DEBUG_OUTPUT)
       {
-        debugPrintAST(stmt.get(), indent + 1);
+        std::cout << "Debug: " << message << "\n";
       }
-      std::cout << indentStr << "}\n";
     }
-    else if (const auto *expr = dynamic_cast<const AST::ExpressionStatement *>(node))
+
+    // エラーチェック用のヘルパー関数
+    bool isError(const ObjectPtr &obj)
     {
-      std::cout << indentStr << "ExpressionStatement {\n";
-      if (expr->expression)
-      {
-        debugPrintAST(expr->expression.get(), indent + 1);
-      }
-      std::cout << indentStr << "}\n";
-    }
-    else if (const auto *infix = dynamic_cast<const AST::InfixExpression *>(node))
-    {
-      std::cout << indentStr << "InfixExpression {\n";
-      std::cout << indentStr << "  operator: " << infix->op << "\n";
-      std::cout << indentStr << "  left: ";
-      if (infix->left)
-        debugPrintAST(infix->left.get(), indent + 1);
-      std::cout << indentStr << "  right: ";
-      if (infix->right)
-        debugPrintAST(infix->right.get(), indent + 1);
-      std::cout << indentStr << "}\n";
-    }
-    else if (const auto *prefix = dynamic_cast<const AST::PrefixExpression *>(node))
-    {
-      std::cout << indentStr << "PrefixExpression {\n";
-      std::cout << indentStr << "  operator: " << prefix->op << "\n";
-      std::cout << indentStr << "  right: ";
-      if (prefix->right)
-        debugPrintAST(prefix->right.get(), indent + 1);
-      std::cout << indentStr << "}\n";
-    }
-    else if (const auto *integer = dynamic_cast<const AST::IntegerLiteral *>(node))
-    {
-      std::cout << indentStr << "IntegerLiteral(" << integer->value << ")\n";
-    }
-    else if (const auto *boolean = dynamic_cast<const AST::BooleanLiteral *>(node))
-    {
-      std::cout << indentStr << "BooleanLiteral(" << (boolean->value ? "true" : "false") << ")\n";
-    }
-    else if (const auto *str = dynamic_cast<const AST::StringLiteral *>(node))
-    {
-      std::cout << indentStr << "StringLiteral(\"" << str->value << "\")\n";
-    }
-    else if (const auto *ident = dynamic_cast<const AST::Identifier *>(node))
-    {
-      std::cout << indentStr << "Identifier(" << ident->value << ")\n";
-    }
-    else
-    {
-      std::cout << indentStr << "Unknown Node Type: " << typeid(*node).name() << "\n";
+      return obj != nullptr && obj->type() == ObjectType::ERROR;
     }
   }
 
   ObjectPtr Evaluator::eval(const AST::Node *node)
   {
-    if (node == nullptr)
-    {
+    if (!node)
       return std::make_shared<Null>();
+
+    // リテラルの評価
+    if (auto *intLiteral = dynamic_cast<const AST::IntegerLiteral *>(node))
+    {
+      return evalIntegerLiteral(intLiteral);
+    }
+    if (auto *boolLiteral = dynamic_cast<const AST::BooleanLiteral *>(node))
+    {
+      return evalBooleanLiteral(boolLiteral);
+    }
+    if (auto *strLiteral = dynamic_cast<const AST::StringLiteral *>(node))
+    {
+      return evalStringLiteral(strLiteral);
     }
 
-    // リテラルの評価を先に行う
-    if (const auto *integerLiteral = dynamic_cast<const AST::IntegerLiteral *>(node))
+    // 式文の評価
+    if (auto *exprStmt = dynamic_cast<const AST::ExpressionStatement *>(node))
     {
-      return evalIntegerLiteral(integerLiteral);
-    }
-    if (const auto *booleanLiteral = dynamic_cast<const AST::BooleanLiteral *>(node))
-    {
-      return evalBooleanLiteral(booleanLiteral);
-    }
-    if (const auto *stringLiteral = dynamic_cast<const AST::StringLiteral *>(node))
-    {
-      return evalStringLiteral(stringLiteral);
+      return exprStmt->expression ? eval(exprStmt->expression.get()) : std::make_shared<Null>();
     }
 
-    // ExpressionStatementの評価
-    if (const auto *expressionStatement = dynamic_cast<const AST::ExpressionStatement *>(node))
-    {
-      if (!expressionStatement->expression)
-      {
-        return std::make_shared<Null>();
-      }
-      return eval(expressionStatement->expression.get());
-    }
-
-    // Programの評価
-    if (const auto *program = dynamic_cast<const AST::Program *>(node))
+    // プログラムの評価
+    if (auto *program = dynamic_cast<const AST::Program *>(node))
     {
       return evalProgram(program);
     }
 
-    // 式の評価
-    if (const auto *prefixExpression = dynamic_cast<const AST::PrefixExpression *>(node))
+    // 前置式の評価
+    if (auto *prefixExpr = dynamic_cast<const AST::PrefixExpression *>(node))
     {
-      if (!prefixExpression->right)
-      {
-        return newError("invalid prefix expression: right operand is null");
-      }
-      auto right = eval(prefixExpression->right.get());
-      if (auto error = std::dynamic_pointer_cast<Error>(right))
-      {
-        return error;
-      }
-      return evalPrefixExpression(prefixExpression->op, right);
+      return evalPrefixExpression(prefixExpr);
     }
 
-    if (const auto *infixExpression = dynamic_cast<const AST::InfixExpression *>(node))
+    // 中置式の評価
+    if (auto *infixExpr = dynamic_cast<const AST::InfixExpression *>(node))
     {
-      if (!infixExpression->left || !infixExpression->right)
-      {
-        return newError("invalid infix expression: operand is null");
-      }
-
-      // 左辺を先に評価
-      auto left = eval(infixExpression->left.get());
-      if (auto error = std::dynamic_pointer_cast<Error>(left))
-      {
-        return error;
-      }
-
-      // 右辺を評価
-      auto right = eval(infixExpression->right.get());
-      if (auto error = std::dynamic_pointer_cast<Error>(right))
-      {
-        return error;
-      }
-
-      // 演算子の優先順位に従って評価
-      if (infixExpression->op == "*" || infixExpression->op == "/")
-      {
-        auto result = evalInfixExpression(infixExpression->op, left, right);
-        if (auto error = std::dynamic_pointer_cast<Error>(result))
-        {
-          return error;
-        }
-        return result;
-      }
-
-      // 加減算は後で評価
-      return evalInfixExpression(infixExpression->op, left, right);
+      return evalInfixExpression(infixExpr);
     }
 
     return std::make_shared<Null>();
@@ -167,124 +77,182 @@ namespace monkey
       return std::make_shared<Null>();
 
     ObjectPtr result;
-    for (const auto &statement : program->statements)
+    for (const std::unique_ptr<AST::Statement> &stmt : program->statements)
     {
-      if (!statement)
+      if (!stmt)
         continue;
-      result = eval(statement.get());
 
-      if (auto error = std::dynamic_pointer_cast<Error>(result))
-      {
-        return error;
-      }
+      result = eval(stmt.get());
+      if (isError(result))
+        return result;
     }
     return result ? result : std::make_shared<Null>();
+  }
+
+  ObjectPtr Evaluator::evalPrefixExpression(const AST::PrefixExpression *expr)
+  {
+    if (!expr || !expr->right)
+    {
+      return newError("invalid prefix expression");
+    }
+
+    auto right = eval(expr->right.get());
+    if (isError(right))
+      return right;
+
+    if (expr->op == "!")
+    {
+      return evalBangOperatorExpression(right);
+    }
+    if (expr->op == "-")
+    {
+      return evalMinusPrefixOperatorExpression(right);
+    }
+
+    return newError("unknown operator: " + expr->op);
+  }
+
+  ObjectPtr Evaluator::evalMinusPrefixOperatorExpression(const ObjectPtr &right)
+  {
+    if (auto integer = std::dynamic_pointer_cast<Integer>(right))
+    {
+      return std::make_shared<Integer>(-integer->value());
+    }
+    return newError("invalid operator: -" + objectTypeToString(right->type()));
+  }
+
+  ObjectPtr Evaluator::evalInfixExpression(const AST::InfixExpression *expr)
+  {
+    if (!expr || !expr->left || !expr->right)
+    {
+      return newError("invalid infix expression");
+    }
+
+    auto left = eval(expr->left.get());
+    if (isError(left))
+      return left;
+
+    auto right = eval(expr->right.get());
+    if (isError(right))
+      return right;
+
+    return evalInfixOperation(expr->op, left, right);
+  }
+
+  ObjectPtr Evaluator::evalInfixOperation(const std::string &op, const ObjectPtr &left, const ObjectPtr &right)
+  {
+    if (left->type() != right->type())
+    {
+      return newError("type mismatch: " + objectTypeToString(left->type()) + " " +
+                      op + " " + objectTypeToString(right->type()));
+    }
+
+    // 整数演算
+    std::shared_ptr<Integer> leftInt = std::dynamic_pointer_cast<Integer>(left);
+    if (leftInt)
+    {
+      return evalIntegerInfixExpression(op, leftInt, std::dynamic_pointer_cast<Integer>(right));
+    }
+
+    // 真偽値演算
+    std::shared_ptr<Boolean> leftBool = std::dynamic_pointer_cast<Boolean>(left);
+    if (leftBool)
+    {
+      return evalBooleanInfixExpression(op, leftBool, std::dynamic_pointer_cast<Boolean>(right));
+    }
+
+    // 文字列演算
+    std::shared_ptr<String> leftStr = std::dynamic_pointer_cast<String>(left);
+    if (leftStr)
+    {
+      return evalStringInfixExpression(op, leftStr, std::dynamic_pointer_cast<String>(right));
+    }
+
+    return newError("unknown operator: " + objectTypeToString(left->type()) + " " +
+                    op + " " + objectTypeToString(right->type()));
+  }
+
+  ObjectPtr Evaluator::evalIntegerInfixExpression(
+      const std::string &op,
+      const std::shared_ptr<Integer> &left,
+      const std::shared_ptr<Integer> &right)
+  {
+    auto leftVal = left->value();
+    auto rightVal = right->value();
+
+    if (op == "*")
+      return std::make_shared<Integer>(leftVal * rightVal);
+    if (op == "/")
+    {
+      if (rightVal == 0)
+        return newError("division by zero");
+      return std::make_shared<Integer>(leftVal / rightVal);
+    }
+    if (op == "+")
+      return std::make_shared<Integer>(leftVal + rightVal);
+    if (op == "-")
+      return std::make_shared<Integer>(leftVal - rightVal);
+    if (op == "<")
+      return std::make_shared<Boolean>(leftVal < rightVal);
+    if (op == ">")
+      return std::make_shared<Boolean>(leftVal > rightVal);
+    if (op == "==")
+      return std::make_shared<Boolean>(leftVal == rightVal);
+    if (op == "!=")
+      return std::make_shared<Boolean>(leftVal != rightVal);
+
+    return newError("unknown operator: INTEGER " + op + " INTEGER");
+  }
+
+  ObjectPtr Evaluator::evalBooleanInfixExpression(
+      const std::string &op,
+      const std::shared_ptr<Boolean> &left,
+      const std::shared_ptr<Boolean> &right)
+  {
+    if (op == "==")
+      return std::make_shared<Boolean>(left->value() == right->value());
+    if (op == "!=")
+      return std::make_shared<Boolean>(left->value() != right->value());
+    return newError("unknown operator: BOOLEAN " + op + " BOOLEAN");
+  }
+
+  ObjectPtr Evaluator::evalStringInfixExpression(
+      const std::string &op,
+      const std::shared_ptr<String> &left,
+      const std::shared_ptr<String> &right)
+  {
+    if (op == "+")
+      return std::make_shared<String>(left->value() + right->value());
+    return newError("unknown operator: STRING " + op + " STRING");
   }
 
   ObjectPtr Evaluator::evalIntegerLiteral(const AST::IntegerLiteral *node)
   {
     if (!node)
+    {
       return std::make_shared<Null>();
-    return std::make_shared<Integer>(node->value);
+    }
+    return std::static_pointer_cast<Object>(std::make_shared<Integer>(node->value));
   }
 
   ObjectPtr Evaluator::evalBooleanLiteral(const AST::BooleanLiteral *node)
   {
     if (!node)
+    {
       return std::make_shared<Null>();
-    std::cout << "Evaluating boolean literal: " << (node->value ? "true" : "false") << "\n";
-    return std::make_shared<Boolean>(node->value);
+    }
+    debugPrint("Evaluating boolean literal: " + std::string(node->value ? "true" : "false"));
+    return std::static_pointer_cast<Object>(std::make_shared<Boolean>(node->value));
   }
 
   ObjectPtr Evaluator::evalStringLiteral(const AST::StringLiteral *node)
   {
     if (!node)
+    {
       return std::make_shared<Null>();
-    std::cout << "Evaluating string literal: \"" << node->value << "\"\n";
-    return std::make_shared<String>(node->value);
-  }
-
-  ObjectPtr Evaluator::evalPrefixExpression(const std::string &op, const ObjectPtr &right)
-  {
-    if (!right)
-      return std::make_shared<Null>();
-
-    if (op == "!")
-    {
-      return evalBangOperatorExpression(right);
     }
-    if (op == "-")
-    {
-      if (auto integer = std::dynamic_pointer_cast<Integer>(right))
-      {
-        return std::make_shared<Integer>(-integer->value());
-      }
-      return newError("invalid operator: -" + objectTypeToString(right->type()));
-    }
-
-    return newError("unknown operator: " + op);
-  }
-
-  ObjectPtr Evaluator::evalInfixExpression(const std::string &op, const ObjectPtr &left, const ObjectPtr &right)
-  {
-    // 型が異なる場合のエラー処理を先に行う
-    if (left->type() != right->type())
-    {
-      return newError("type mismatch: " + objectTypeToString(left->type()) + " " + 
-                     op + " " + objectTypeToString(right->type()));
-    }
-
-    // 整数の演算
-    if (auto leftInt = std::dynamic_pointer_cast<Integer>(left))
-    {
-      if (auto rightInt = std::dynamic_pointer_cast<Integer>(right))
-      {
-        auto leftVal = leftInt->value();
-        auto rightVal = rightInt->value();
-
-        // 演算子の優先順位に従って評価
-        if (op == "*") return std::make_shared<Integer>(leftVal * rightVal);
-        if (op == "/") {
-          if (rightVal == 0) return newError("division by zero");
-          return std::make_shared<Integer>(leftVal / rightVal);
-        }
-        if (op == "+") return std::make_shared<Integer>(leftVal + rightVal);
-        if (op == "-") return std::make_shared<Integer>(leftVal - rightVal);
-        if (op == "<") return std::make_shared<Boolean>(leftVal < rightVal);
-        if (op == ">") return std::make_shared<Boolean>(leftVal > rightVal);
-        if (op == "==") return std::make_shared<Boolean>(leftVal == rightVal);
-        if (op == "!=") return std::make_shared<Boolean>(leftVal != rightVal);
-
-        return newError("unknown operator: INTEGER " + op + " INTEGER");
-      }
-    }
-
-    // 真偽値の演算を追加
-    if (auto leftBool = std::dynamic_pointer_cast<Boolean>(left))
-    {
-      if (auto rightBool = std::dynamic_pointer_cast<Boolean>(right))
-      {
-        if (op == "==") return std::make_shared<Boolean>(leftBool->value() == rightBool->value());
-        if (op == "!=") return std::make_shared<Boolean>(leftBool->value() != rightBool->value());
-        return newError("unknown operator: BOOLEAN " + op + " BOOLEAN");
-      }
-    }
-
-    // 文字列の演算
-    if (auto leftStr = std::dynamic_pointer_cast<String>(left))
-    {
-      if (auto rightStr = std::dynamic_pointer_cast<String>(right))
-      {
-        if (op == "+")
-        {
-          return std::make_shared<String>(leftStr->value() + rightStr->value());
-        }
-        return newError("unknown operator: STRING " + op + " STRING");
-      }
-    }
-
-    return newError("unknown operator: " + objectTypeToString(left->type()) + " " + 
-                   op + " " + objectTypeToString(right->type()));
+    debugPrint("Evaluating string literal: \"" + node->value + "\"");
+    return std::static_pointer_cast<Object>(std::make_shared<String>(node->value));
   }
 
   ObjectPtr Evaluator::evalBangOperatorExpression(const ObjectPtr &right)
@@ -321,6 +289,7 @@ namespace monkey
 
   ObjectPtr Evaluator::newError(const std::string &message)
   {
+    debugPrint("Error: " + message);
     return std::make_shared<Error>(message);
   }
 

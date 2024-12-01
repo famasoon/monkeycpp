@@ -1,38 +1,50 @@
-#pragma once
-#include "../ast/ast.hpp"
+#ifndef EVALUATOR_HPP
+#define EVALUATOR_HPP
+
 #include "../object/object.hpp"
+#include "../ast/ast.hpp"
 #include <memory>
 #include <string>
 
 namespace monkey
 {
-
   class Evaluator
   {
   public:
-    Evaluator() = default;
-    ObjectPtr eval(const AST::Node* node);
+    ObjectPtr eval(const AST::Node *node);
 
   private:
-    ObjectPtr evalProgram(const AST::Program* program);
-    ObjectPtr evalStatement(const AST::Statement* statement);
-    ObjectPtr evalExpressionStatement(const AST::ExpressionStatement* statement);
+    // プログラムと式の評価
+    ObjectPtr evalProgram(const AST::Program *program);
+    ObjectPtr evalPrefixExpression(const AST::PrefixExpression *expr);
+    ObjectPtr evalInfixExpression(const AST::InfixExpression *expr);
 
-    ObjectPtr evalIntegerLiteral(const AST::IntegerLiteral* node);
-    ObjectPtr evalStringLiteral(const AST::StringLiteral* node);
-    ObjectPtr evalBooleanLiteral(const AST::BooleanLiteral* node);
-    ObjectPtr evalPrefixExpression(const std::string& op, const ObjectPtr& right);
-    ObjectPtr evalInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
-    
-    ObjectPtr evalBangOperatorExpression(const ObjectPtr& right);
-    ObjectPtr evalMinusPrefixOperatorExpression(const ObjectPtr& right);
-    ObjectPtr evalEqualityExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
-    
-    ObjectPtr evalIntegerInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
-    ObjectPtr evalStringInfixExpression(const std::string& op, const ObjectPtr& left, const ObjectPtr& right);
-    
-    ObjectPtr newError(const std::string& message);
+    // リテラルの評価
+    ObjectPtr evalIntegerLiteral(const AST::IntegerLiteral *node);
+    ObjectPtr evalBooleanLiteral(const AST::BooleanLiteral *node);
+    ObjectPtr evalStringLiteral(const AST::StringLiteral *node);
+
+    // 演算子の評価
+    ObjectPtr evalBangOperatorExpression(const ObjectPtr &right);
+    ObjectPtr evalMinusPrefixOperatorExpression(const ObjectPtr &right);
+    ObjectPtr evalInfixOperation(const std::string &op, const ObjectPtr &left, const ObjectPtr &right);
+
+    // 型別の中置演算子の評価
+    ObjectPtr evalIntegerInfixExpression(const std::string &op,
+                                         const std::shared_ptr<Integer> &left,
+                                         const std::shared_ptr<Integer> &right);
+    ObjectPtr evalBooleanInfixExpression(const std::string &op,
+                                         const std::shared_ptr<Boolean> &left,
+                                         const std::shared_ptr<Boolean> &right);
+    ObjectPtr evalStringInfixExpression(const std::string &op,
+                                        const std::shared_ptr<String> &left,
+                                        const std::shared_ptr<String> &right);
+
+    // ユーティリティ
     std::string objectTypeToString(ObjectType type);
+    ObjectPtr newError(const std::string &message);
   };
 
 } // namespace monkey
+
+#endif // EVALUATOR_HPP

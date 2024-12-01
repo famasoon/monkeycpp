@@ -8,10 +8,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 FetchContent_Declare(
     googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG release-1.12.1
+    URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
 )
 FetchContent_MakeAvailable(googletest)
+
+# インクルードディレクトリの設定
+include_directories(
+    ${CMAKE_SOURCE_DIR}
+    ${gtest_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/ast
+    ${CMAKE_SOURCE_DIR}/evaluator
+    ${CMAKE_SOURCE_DIR}/object
+    ${CMAKE_SOURCE_DIR}/parser
+    ${CMAKE_SOURCE_DIR}/lexer
+    ${CMAKE_SOURCE_DIR}/token
+)
 
 # objectライブラリの追加
 add_library(object
