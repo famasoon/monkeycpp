@@ -1,37 +1,88 @@
+#pragma once
 #include <string>
 
-namespace token
+namespace Token
 {
-  const std::string ILLEGAL = "ILLEGAL";
-  const std::string EOF_ = "EOF";
 
-  const std::string IDENT = "IDENT";
-  const std::string INT = "INT";
+  // トークンの種類を表す列挙型
+  enum class TokenType
+  {
+    ILLEGAL,
+    EOF_,
 
-  const std::string ASSIGN = "=";
-  const std::string PLUS = "+";
-  const std::string MINUS = "-";
-  const std::string BANG = "!";
-  const std::string ASTERISK = "*";
-  const std::string SLASH = "/";
+    // 識別子 + リテラル
+    IDENT,
+    INT,
 
-  const std::string LT = "<";
-  const std::string GT = ">";
-  const std::string EQ = "==";
-  const std::string NOT_EQ = "!=";
+    // 演算子
+    ASSIGN,
+    PLUS,
+    MINUS,
+    BANG,
+    ASTERISK,
+    SLASH,
 
-  const std::string COMMA = ",";
-  const std::string SEMICOLON = ";";
+    LT,
+    GT,
+    EQ,
+    NOT_EQ,
 
-  const std::string LPAREN = "(";
-  const std::string RPAREN = ")";
-  const std::string LBRACE = "{";
-  const std::string RBRACE = "}";
-  const std::string FUNCTION = "FUNCTION";
-  const std::string LET = "LET";
-  const std::string TRUE = "TRUE";
-  const std::string FALSE = "FALSE";
-  const std::string IF = "IF";
-  const std::string ELSE = "ELSE";
-  const std::string RETURN = "RETURN";
-}
+    // デリミタ
+    COMMA,
+    SEMICOLON,
+
+    LPAREN,
+    RPAREN,
+    LBRACE,
+    RBRACE,
+
+    // キーワード
+    FUNCTION,
+    LET,
+    TRUE,
+    FALSE,
+    IF,
+    ELSE,
+    RETURN
+  };
+
+  class Token
+  {
+  public:
+    TokenType type;
+    std::string literal;
+
+    Token(TokenType type, std::string literal)
+        : type(type), literal(std::move(literal)) {}
+
+    // トークン文字列の定数
+    static const std::string ILLEGAL;
+    static const std::string EOF_;
+    static const std::string IDENT;
+    static const std::string INT;
+    static const std::string ASSIGN;
+    static const std::string PLUS;
+    static const std::string MINUS;
+    static const std::string BANG;
+    static const std::string ASTERISK;
+    static const std::string SLASH;
+    static const std::string LT;
+    static const std::string GT;
+    static const std::string EQ;
+    static const std::string NOT_EQ;
+    static const std::string COMMA;
+    static const std::string SEMICOLON;
+    static const std::string LPAREN;
+    static const std::string RPAREN;
+    static const std::string LBRACE;
+    static const std::string RBRACE;
+    static const std::string FUNCTION;
+    static const std::string LET;
+    static const std::string TRUE;
+    static const std::string FALSE;
+    static const std::string IF;
+    static const std::string ELSE;
+    static const std::string RETURN;
+  };
+
+} // namespace Token
