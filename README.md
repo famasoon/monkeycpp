@@ -1,14 +1,36 @@
-# Monkey Programming Language Interpreter
+# Monkey Programming Language in C++
 
-C++で実装されたMonkeyプログラミング言語のインタープリタです。
+MonkeyプログラミングングのC++実装です。
 
-## 必要条件
+## 機能
 
-- CMake (バージョン3.10以上)
-- C++17対応のコンパイラ
-- Git
+- レキサー (Lexer)
+  - ソースコードをトークンに分割
+  - 識別子、数値、演算子、キーワードなどを認識
 
-## ビルド手順
+- パーサー (Parser)
+  - Pratt構文解析器の実装
+  - 以下の構文をサポート:
+    - let文
+    - return文
+    - 前置演算子 (!、-)
+    - 中置演算子 (+、-、*、/、==、!=、<、>)
+    - 整数リテラル
+    - 識別子
+
+- AST (Abstract Syntax Tree)
+  - プログラムの構造を表現する抽象構文木
+  - 各種ノードタイプ:
+    - Program
+    - Statement (Let, Return, Expression)
+    - Expression (Identifier, IntegerLiteral, PrefixExpression, InfixExpression)
+
+- REPL (Read-Eval-Print Loop)
+  - 対話的な実行環境
+  - セミコロンの自動補完
+  - exitコマンドでの終了
+
+## ビルド方法
 
 ```bash
 git clone https://github.com/kazuki-kawabata/monkey-interpreter.git
