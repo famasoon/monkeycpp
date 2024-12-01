@@ -46,6 +46,9 @@ namespace Token
     RETURN
   };
 
+  // TokenTypeを文字列に変換する関数
+  std::string toString(TokenType type);
+
   class Token
   {
   public:
@@ -54,6 +57,28 @@ namespace Token
 
     Token(TokenType type, std::string literal)
         : type(type), literal(std::move(literal)) {}
+
+    // 比較演算子を追加
+    bool operator==(const Token& other) const {
+      return type == other.type && literal == other.literal;
+    }
+
+    bool operator==(const TokenType& other) const {
+      return type == other;
+    }
+
+    bool operator!=(const Token& other) const {
+      return !(*this == other);
+    }
+
+    bool operator!=(const TokenType& other) const {
+      return type != other;
+    }
+
+    // トークンタイプを文字列として取得するメソッド
+    std::string getType() const {
+      return toString(type);
+    }
 
     // トークン文字列の定数
     static const std::string ILLEGAL;
