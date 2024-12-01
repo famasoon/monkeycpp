@@ -2,27 +2,22 @@
 
 namespace AST
 {
-  // Program implementation
-  std::string Program::TokenLiteral() const
-  {
-    if (!statements.empty() && statements[0])
-    {
-      return statements[0]->TokenLiteral();
-    }
-    return "";
-  }
-
-  std::string Program::String() const
-  {
-    std::string out;
-    for (const auto& stmt : statements)
-    {
-      if (stmt)
-      {
-        out += stmt->String();
+  // Program実装
+  std::string Program::TokenLiteral() const {
+      if (!statements.empty() && statements[0]) {
+          return statements[0]->TokenLiteral();
       }
-    }
-    return out;
+      return "";
+  }
+    
+  std::string Program::String() const {
+      std::string out;
+      for (const auto& stmt : statements) {
+          if (stmt) {
+              out += stmt->String();
+          }
+      }
+      return out;
   }
 
   // BlockStatement implementation
@@ -153,14 +148,26 @@ namespace AST
 
   void PrefixExpression::expressionNode() {}
 
-  std::string PrefixExpression::TokenLiteral() const
-  {
-    return token.literal;
+  std::string PrefixExpression::TokenLiteral() const {
+      return token.literal;
   }
 
-  std::string PrefixExpression::String() const
-  {
-    return "(" + op + right->String() + ")";
+  std::string PrefixExpression::String() const {
+      std::string result = "(";
+      result += op;
+      if (right) {
+          result += right->String();
+      }
+      result += ")";
+      return result;
+  }
+
+  Expression* PrefixExpression::clone() const {
+      auto cloned = new PrefixExpression(token, op);
+      if (right) {
+          cloned->right.reset(right->clone());
+      }
+      return cloned;
   }
 
   // InfixExpression implementation
@@ -169,14 +176,32 @@ namespace AST
 
   void InfixExpression::expressionNode() {}
 
-  std::string InfixExpression::TokenLiteral() const
-  {
-    return token.literal;
+  std::string InfixExpression::TokenLiteral() const {
+      return token.literal;
   }
 
-  std::string InfixExpression::String() const
-  {
-    return "(" + left->String() + " " + op + " " + right->String() + ")";
+  std::string InfixExpression::String() const {
+      std::string result = "(";
+      if (left) {
+          result += left->String();
+      }
+      result += " " + op + " ";
+      if (right) {
+          result += right->String();
+      }
+      result += ")";
+      return result;
+  }
+
+  Expression* InfixExpression::clone() const {
+      auto cloned = new InfixExpression(token, op, nullptr);
+      if (left) {
+          cloned->left.reset(left->clone());
+      }
+      if (right) {
+          cloned->right.reset(right->clone());
+      }
+      return cloned;
   }
 
   // BooleanLiteral implementation

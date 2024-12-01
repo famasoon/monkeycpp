@@ -106,15 +106,7 @@ namespace monkey
     return value->inspect();
   }
 
-  // Function implementation
-  Function::Function(std::vector<std::string> params, const AST::BlockStatement *b, EnvPtr e)
-      : parameters(std::move(params)), body(b), env(std::move(e)) {}
-
-  ObjectType Function::type() const
-  {
-    return ObjectType::FUNCTION;
-  }
-
+  // Function implementation - only inspect() method
   std::string Function::inspect() const
   {
     std::string result;
@@ -319,7 +311,5 @@ namespace monkey
       }
     }
   }
-
-  // その他の既存の実装はそのまま維持...
 
 } // namespace monkey

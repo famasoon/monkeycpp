@@ -153,8 +153,16 @@ namespace monkey
     const AST::BlockStatement* body;
     EnvPtr env;
 
-    Function(std::vector<std::string> params, const AST::BlockStatement* b, EnvPtr e);
-    ObjectType type() const override;
+    Function(std::vector<std::string> params, const AST::BlockStatement* b, EnvPtr e)
+        : parameters(std::move(params))
+        , body(b)
+        , env(std::move(e)) {}
+    
+    ~Function() {
+        delete body;  // 関数本体のメモリを解放
+    }
+    
+    ObjectType type() const override { return ObjectType::FUNCTION; }
     std::string inspect() const override;
   };
 

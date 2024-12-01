@@ -466,25 +466,53 @@ namespace monkey
     return std::make_shared<Error>(message);
   }
 
-  ObjectPtr Evaluator::evalFunctionLiteral(const AST::FunctionLiteral *node)
-  {
-    if (!node)
-    {
-      return std::make_shared<Null>();
+  ObjectPtr Evaluator::evalFunctionLiteral(const AST::FunctionLiteral *node) {
+    std::cout << "Debug: Entering evalFunctionLiteral" << std::endl;
+    
+    if (!node) {
+        std::cout << "Debug: Node is null" << std::endl;
+        return std::make_shared<Null>();
+    }
+
+    if (!node->body) {
+        std::cout << "Debug: Function body is null" << std::endl;
+        return newError("function body is null");
     }
 
     std::vector<std::string> params;
-    for (const auto &param : node->parameters)
-    {
-      if (param)
-      {
-        params.push_back(param->value);
-      }
+    params.reserve(node->parameters.size());
+    for (const auto &param : node->parameters) {
+        if (param) {
+            params.push_back(param->value);
+        }
     }
 
-    // 関数オブジェクトの作成を追跡
-    trackObject();
-    return std::make_shared<Function>(params, node->body.get(), env);
+    std::cout << "Debug: Creating function object with " 
+              << params.size() << " parameters" << std::endl;
+    std::cout << "Debug: Function body statements: " << node->body->statements.size() << std::endl;
+
+    // 関数本体のコピーを作成
+    auto bodyClone = new AST::BlockStatement(*node->body);
+    std::cout << "Debug: Created body clone with " << bodyClone->statements.size() << " statements" << std::endl;
+
+    // 現在の環境をキャプチャ
+    auto capturedEnv = Environment::NewEnclosedEnvironment(env);
+    
+    // 関数オブジェクトを作成
+    auto fn = std::make_shared<Function>(
+        std::move(params),
+        bodyClone,  // コピーした関数本体を渡す
+        capturedEnv
+    );
+
+    // bodyの有効性を確認
+    if (!fn->body || fn->body->statements.empty()) {
+        std::cout << "Debug: Created function has invalid body" << std::endl;
+        delete bodyClone;  // エラーの場合はメモリを解放
+        return newError("function creation failed");
+    }
+
+    return fn;
   }
 
   ObjectPtr Evaluator::evalIdentifier(const AST::Identifier *node)
@@ -502,26 +530,49 @@ namespace monkey
     return newError("identifier not found: " + node->value);
   }
 
-  ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement *block)
-  {
-    if (!block)
-    {
-      return std::make_shared<Null>();
+  ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement *block) {
+    if (!block) {
+        std::cout << "Debug: Block is null" << std::endl;
+        return std::make_shared<Null>();
     }
 
-    ObjectPtr result;
-    for (const auto &stmt : block->statements)
-    {
-      if (!stmt)
-        continue;
+    std::cout << "Debug: Block address: " << block << std::endl;
+    
+    // statementsメンバーの有効性を確認
+    try {
+        size_t stmtSize = block->statements.size();
+        std::cout << "Debug: Number of statements: " << stmtSize << std::endl;
 
-      result = eval(stmt.get());
-      if (isError(result))
-      {
+        if (stmtSize > 1000) {  // より現実的な上限値に変更
+            std::cout << "Debug: Too many statements" << std::endl;
+            return newError("too many statements in block");
+        }
+
+        ObjectPtr result = std::make_shared<Null>();
+
+        for (const auto &stmt : block->statements) {
+            if (!stmt) {
+                std::cout << "Debug: Statement is null" << std::endl;
+                continue;
+            }
+
+            std::cout << "Debug: Evaluating statement: " << stmt->String() << std::endl;
+            result = eval(stmt.get());
+            
+            if (isError(result)) {
+                return result;
+            }
+
+            if (result && result->type() == ObjectType::RETURN_VALUE) {
+                return result;
+            }
+        }
+
         return result;
-      }
+    } catch (const std::exception& e) {
+        std::cout << "Debug: Exception caught: " << e.what() << std::endl;
+        return newError("invalid block statement");
     }
-    return result ? result : std::make_shared<Null>();
   }
 
   ObjectPtr Evaluator::evalLetStatement(const AST::LetStatement *letStmt)
@@ -560,19 +611,25 @@ namespace monkey
 
   ObjectPtr Evaluator::evalCallExpression(const AST::CallExpression *call)
   {
+    std::cout << "Debug: Entering evalCallExpression" << std::endl;
+
     if (!call || !call->function)
     {
+      std::cout << "Debug: Invalid call expression" << std::endl;
       return newError("invalid call expression");
     }
 
     // 関数を評価
+    std::cout << "Debug: Evaluating function" << std::endl;
     auto function = eval(call->function.get());
     if (isError(function))
     {
+      std::cout << "Debug: Function evaluation error" << std::endl;
       return function;
     }
 
     // 引数を評価
+    std::cout << "Debug: Evaluating arguments" << std::endl;
     std::vector<ObjectPtr> args;
     args.reserve(call->arguments.size());
     for (const auto &arg : call->arguments)
@@ -583,6 +640,7 @@ namespace monkey
       auto evaluated = eval(arg.get());
       if (isError(evaluated))
       {
+        std::cout << "Debug: Argument evaluation error" << std::endl;
         return evaluated;
       }
       args.push_back(evaluated);
@@ -591,8 +649,11 @@ namespace monkey
     // 関数オブジェクトの場合
     if (auto fn = std::dynamic_pointer_cast<Function>(function))
     {
+      std::cout << "Debug: Found function object" << std::endl;
+
       if (fn->parameters.size() != args.size())
       {
+        std::cout << "Debug: Wrong number of arguments" << std::endl;
         return newError("wrong number of arguments: expected " +
                         std::to_string(fn->parameters.size()) + ", got " +
                         std::to_string(args.size()));
@@ -600,44 +661,56 @@ namespace monkey
 
       if (!fn->body)
       {
+        std::cout << "Debug: Function body is null" << std::endl;
         return newError("function body is null");
       }
 
       // 関数の環境を基に新しい環境を作成
+      std::cout << "Debug: Creating new environment" << std::endl;
       auto newEnv = Environment::NewEnclosedEnvironment(env);
 
       // パラメータをバインド
+      std::cout << "Debug: Binding parameters" << std::endl;
       for (size_t i = 0; i < fn->parameters.size(); i++)
       {
         newEnv->Set(fn->parameters[i], args[i]);
       }
 
       // 現在の環境を一時的に保存
+      std::cout << "Debug: Saving current environment" << std::endl;
       auto savedEnv = env;
+
       // 新しい環境を設定
+      std::cout << "Debug: Setting new environment" << std::endl;
       env = newEnv;
 
       // 関数本体を評価
+      std::cout << "Debug: Evaluating function body" << std::endl;
       auto result = evalBlockStatement(fn->body);
 
       // 環境を元に戻す
+      std::cout << "Debug: Restoring environment" << std::endl;
       env = savedEnv;
 
       // ReturnValueの場合は、内部の値を返す
       if (auto returnValue = std::dynamic_pointer_cast<ReturnValue>(result))
       {
+        std::cout << "Debug: Returning return value" << std::endl;
         return returnValue->value;
       }
 
+      std::cout << "Debug: Returning result" << std::endl;
       return result;
     }
 
     // ビルトイン関数の場合
     if (auto builtin = std::dynamic_pointer_cast<Builtin>(function))
     {
+      std::cout << "Debug: Executing builtin function" << std::endl;
       return builtin->fn(args);
     }
 
+    std::cout << "Debug: Not a function error" << std::endl;
     return newError("not a function: " + objectTypeToString(function->type()));
   }
 
