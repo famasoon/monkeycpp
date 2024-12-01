@@ -262,7 +262,7 @@ namespace monkey
       const std::shared_ptr<String> &right)
   {
     if (op == "+")
-      return std::make_shared<String>(left->value() + right->value());
+      return std::make_shared<String>(left->getValue() + right->getValue());
     return newError("unknown operator: STRING " + op + " STRING");
   }
 
@@ -291,8 +291,7 @@ namespace monkey
     {
       return std::make_shared<Null>();
     }
-    debugPrint("Evaluating string literal: \"" + node->value + "\"");
-    return std::static_pointer_cast<Object>(std::make_shared<String>(node->value));
+    return std::make_shared<String>(node->getValue());
   }
 
   ObjectPtr Evaluator::evalBangOperatorExpression(const ObjectPtr &right)

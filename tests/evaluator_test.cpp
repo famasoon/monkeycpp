@@ -38,7 +38,7 @@ void testBooleanObject(const ObjectPtr& obj, bool expected) {
 void testStringObject(const ObjectPtr& obj, const std::string& expected) {
     auto str = std::dynamic_pointer_cast<String>(obj);
     ASSERT_NE(str, nullptr);
-    EXPECT_EQ(str->value(), expected);
+    EXPECT_EQ(str->getValue(), expected);
 }
 
 // 整数リテラルのテスト
@@ -158,4 +158,18 @@ TEST(EvaluatorTest, TestErrorHandling) {
                                     << (evaluated ? evaluated->inspect() : "nullptr");
         EXPECT_EQ(errorObj->message(), tt.expectedMessage);
     }
+}
+
+TEST(EvaluatorTest, TestStringLiteral) {
+    std::string input = R"("Hello World!")";
+    
+    auto evaluated = testEval(input);
+    testStringObject(evaluated, "Hello World!");
+}
+
+TEST(EvaluatorTest, TestStringConcatenation) {
+    std::string input = R"("Hello" + " " + "World!")";
+    
+    auto evaluated = testEval(input);
+    testStringObject(evaluated, "Hello World!");
 } 

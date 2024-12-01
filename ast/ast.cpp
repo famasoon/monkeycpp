@@ -252,8 +252,8 @@ namespace AST
   }
 
   // StringLiteral implementation
-  StringLiteral::StringLiteral(Token::Token token, const std::string& v)
-      : token(std::move(token)), value(v) {}
+  StringLiteral::StringLiteral(Token::Token token, std::string value)
+      : token(std::move(token)), value(std::move(value)) {}
 
   void StringLiteral::expressionNode() {}
 
@@ -264,6 +264,6 @@ namespace AST
 
   std::string StringLiteral::String() const
   {
-    return value;
+    return "\"" + value + "\"";
   }
 } // namespace AST

@@ -191,14 +191,23 @@ namespace AST
   // 文字列リテラル
   class StringLiteral : public Expression
   {
-  public:
+  private:
     Token::Token token;
     std::string value;
 
-    StringLiteral(Token::Token token, const std::string &v);
+  public:
+    StringLiteral(Token::Token token, std::string value);
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
+    
+    const std::string& getValue() const { return value; }
+  };
+
+  enum class ExpressionType {
+    // 既存の型...
+    StringLiteral,
+    // その他の型...
   };
 
 } // namespace AST
