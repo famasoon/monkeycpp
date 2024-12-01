@@ -37,121 +37,141 @@ namespace monkey
     }
 
     // 配列用の組み込み関数
-    ObjectPtr builtinLen(const std::vector<ObjectPtr>& args) {
-        if (args.size() != 1) {
-            return std::make_shared<Error>("wrong number of arguments. got=" + 
-                std::to_string(args.size()) + ", want=1");
-        }
+    ObjectPtr builtinLen(const std::vector<ObjectPtr> &args)
+    {
+      if (args.size() != 1)
+      {
+        return std::make_shared<Error>("wrong number of arguments. got=" +
+                                       std::to_string(args.size()) + ", want=1");
+      }
 
-        if (auto array = std::dynamic_pointer_cast<Array>(args[0])) {
-            return std::make_shared<Integer>(array->elements.size());
-        }
+      if (auto array = std::dynamic_pointer_cast<Array>(args[0]))
+      {
+        return std::make_shared<Integer>(array->elements.size());
+      }
 
-        return std::make_shared<Error>("argument to `len` not supported, got " + 
-            objectTypeToString(args[0]->type()));
+      return std::make_shared<Error>("argument to `len` not supported, got " +
+                                     objectTypeToString(args[0]->type()));
     }
 
-    ObjectPtr builtinFirst(const std::vector<ObjectPtr>& args) {
-        if (args.size() != 1) {
-            return std::make_shared<Error>("wrong number of arguments. got=" + 
-                std::to_string(args.size()) + ", want=1");
-        }
+    ObjectPtr builtinFirst(const std::vector<ObjectPtr> &args)
+    {
+      if (args.size() != 1)
+      {
+        return std::make_shared<Error>("wrong number of arguments. got=" +
+                                       std::to_string(args.size()) + ", want=1");
+      }
 
-        auto array = std::dynamic_pointer_cast<Array>(args[0]);
-        if (!array) {
-            return std::make_shared<Error>("argument to `first` must be ARRAY, got " + 
-                objectTypeToString(args[0]->type()));
-        }
+      auto array = std::dynamic_pointer_cast<Array>(args[0]);
+      if (!array)
+      {
+        return std::make_shared<Error>("argument to `first` must be ARRAY, got " +
+                                       objectTypeToString(args[0]->type()));
+      }
 
-        if (array->elements.empty()) {
-            return std::make_shared<Null>();
-        }
+      if (array->elements.empty())
+      {
+        return std::make_shared<Null>();
+      }
 
-        return array->elements[0];
+      return array->elements[0];
     }
 
-    ObjectPtr builtinLast(const std::vector<ObjectPtr>& args) {
-        if (args.size() != 1) {
-            return std::make_shared<Error>("wrong number of arguments. got=" + 
-                std::to_string(args.size()) + ", want=1");
-        }
+    ObjectPtr builtinLast(const std::vector<ObjectPtr> &args)
+    {
+      if (args.size() != 1)
+      {
+        return std::make_shared<Error>("wrong number of arguments. got=" +
+                                       std::to_string(args.size()) + ", want=1");
+      }
 
-        auto array = std::dynamic_pointer_cast<Array>(args[0]);
-        if (!array) {
-            return std::make_shared<Error>("argument to `last` must be ARRAY, got " + 
-                objectTypeToString(args[0]->type()));
-        }
+      auto array = std::dynamic_pointer_cast<Array>(args[0]);
+      if (!array)
+      {
+        return std::make_shared<Error>("argument to `last` must be ARRAY, got " +
+                                       objectTypeToString(args[0]->type()));
+      }
 
-        if (array->elements.empty()) {
-            return std::make_shared<Null>();
-        }
+      if (array->elements.empty())
+      {
+        return std::make_shared<Null>();
+      }
 
-        return array->elements.back();
+      return array->elements.back();
     }
 
-    ObjectPtr builtinRest(const std::vector<ObjectPtr>& args) {
-        if (args.size() != 1) {
-            return std::make_shared<Error>("wrong number of arguments. got=" + 
-                std::to_string(args.size()) + ", want=1");
-        }
+    ObjectPtr builtinRest(const std::vector<ObjectPtr> &args)
+    {
+      if (args.size() != 1)
+      {
+        return std::make_shared<Error>("wrong number of arguments. got=" +
+                                       std::to_string(args.size()) + ", want=1");
+      }
 
-        auto array = std::dynamic_pointer_cast<Array>(args[0]);
-        if (!array) {
-            return std::make_shared<Error>("argument to `rest` must be ARRAY, got " + 
-                objectTypeToString(args[0]->type()));
-        }
+      auto array = std::dynamic_pointer_cast<Array>(args[0]);
+      if (!array)
+      {
+        return std::make_shared<Error>("argument to `rest` must be ARRAY, got " +
+                                       objectTypeToString(args[0]->type()));
+      }
 
-        if (array->elements.empty()) {
-            return std::make_shared<Null>();
-        }
+      if (array->elements.empty())
+      {
+        return std::make_shared<Null>();
+      }
 
-        std::vector<ObjectPtr> newElements(array->elements.begin() + 1, array->elements.end());
-        return std::make_shared<Array>(std::move(newElements));
+      std::vector<ObjectPtr> newElements(array->elements.begin() + 1, array->elements.end());
+      return std::make_shared<Array>(std::move(newElements));
     }
 
-    ObjectPtr builtinPush(const std::vector<ObjectPtr>& args) {
-        if (args.size() != 2) {
-            return std::make_shared<Error>("wrong number of arguments. got=" + 
-                std::to_string(args.size()) + ", want=2");
-        }
+    ObjectPtr builtinPush(const std::vector<ObjectPtr> &args)
+    {
+      if (args.size() != 2)
+      {
+        return std::make_shared<Error>("wrong number of arguments. got=" +
+                                       std::to_string(args.size()) + ", want=2");
+      }
 
-        auto array = std::dynamic_pointer_cast<Array>(args[0]);
-        if (!array) {
-            return std::make_shared<Error>("argument to `push` must be ARRAY, got " + 
-                objectTypeToString(args[0]->type()));
-        }
+      auto array = std::dynamic_pointer_cast<Array>(args[0]);
+      if (!array)
+      {
+        return std::make_shared<Error>("argument to `push` must be ARRAY, got " +
+                                       objectTypeToString(args[0]->type()));
+      }
 
-        std::vector<ObjectPtr> newElements = array->elements;
-        newElements.push_back(args[1]);
-        return std::make_shared<Array>(std::move(newElements));
+      std::vector<ObjectPtr> newElements = array->elements;
+      newElements.push_back(args[1]);
+      return std::make_shared<Array>(std::move(newElements));
     }
 
     // objectTypeToString関数の実装
-    std::string objectTypeToString(ObjectType type) {
-        switch (type) {
-        case ObjectType::INTEGER:
-            return "INTEGER";
-        case ObjectType::BOOLEAN:
-            return "BOOLEAN";
-        case ObjectType::STRING:
-            return "STRING";
-        case ObjectType::NULL_OBJ:
-            return "NULL";
-        case ObjectType::ERROR:
-            return "ERROR";
-        case ObjectType::ARRAY:
-            return "ARRAY";
-        case ObjectType::HASH:
-            return "HASH";
-        case ObjectType::FUNCTION:
-            return "FUNCTION";
-        case ObjectType::BUILTIN:
-            return "BUILTIN";
-        case ObjectType::RETURN_VALUE:
-            return "RETURN_VALUE";
-        default:
-            return "UNKNOWN";
-        }
+    std::string objectTypeToString(ObjectType type)
+    {
+      switch (type)
+      {
+      case ObjectType::INTEGER:
+        return "INTEGER";
+      case ObjectType::BOOLEAN:
+        return "BOOLEAN";
+      case ObjectType::STRING:
+        return "STRING";
+      case ObjectType::NULL_OBJ:
+        return "NULL";
+      case ObjectType::ERROR:
+        return "ERROR";
+      case ObjectType::ARRAY:
+        return "ARRAY";
+      case ObjectType::HASH:
+        return "HASH";
+      case ObjectType::FUNCTION:
+        return "FUNCTION";
+      case ObjectType::BUILTIN:
+        return "BUILTIN";
+      case ObjectType::RETURN_VALUE:
+        return "RETURN_VALUE";
+      default:
+        return "UNKNOWN";
+      }
     }
   }
 
@@ -228,14 +248,17 @@ namespace monkey
     {
       return evalCallExpression(callExpr);
     }
-    if (auto arrayLiteral = dynamic_cast<const AST::ArrayLiteral*>(node)) {
-        return evalArrayLiteral(arrayLiteral);
+    if (auto arrayLiteral = dynamic_cast<const AST::ArrayLiteral *>(node))
+    {
+      return evalArrayLiteral(arrayLiteral);
     }
-    if (auto indexExpr = dynamic_cast<const AST::IndexExpression*>(node)) {
-        return evalIndexExpression(indexExpr);
+    if (auto indexExpr = dynamic_cast<const AST::IndexExpression *>(node))
+    {
+      return evalIndexExpression(indexExpr);
     }
-    if (auto hashLiteral = dynamic_cast<const AST::HashLiteral*>(node)) {
-        return evalHashLiteral(hashLiteral);
+    if (auto hashLiteral = dynamic_cast<const AST::HashLiteral *>(node))
+    {
+      return evalHashLiteral(hashLiteral);
     }
 
     return std::make_shared<Null>();
@@ -542,13 +565,16 @@ namespace monkey
       return newError("invalid call expression");
     }
 
+    // 関数を評価
     auto function = eval(call->function.get());
     if (isError(function))
     {
       return function;
     }
 
+    // 引数を評価
     std::vector<ObjectPtr> args;
+    args.reserve(call->arguments.size());
     for (const auto &arg : call->arguments)
     {
       if (!arg)
@@ -562,18 +588,54 @@ namespace monkey
       args.push_back(evaluated);
     }
 
+    // 関数オブジェクトの場合
     if (auto fn = std::dynamic_pointer_cast<Function>(function))
     {
-      auto newEnv = Environment::NewEnclosedEnvironment(fn->env);
+      if (fn->parameters.size() != args.size())
+      {
+        return newError("wrong number of arguments: expected " +
+                        std::to_string(fn->parameters.size()) + ", got " +
+                        std::to_string(args.size()));
+      }
 
-      for (size_t i = 0; i < fn->parameters.size() && i < args.size(); i++)
+      if (!fn->body)
+      {
+        return newError("function body is null");
+      }
+
+      // 関数の環境を基に新しい環境を作成
+      auto newEnv = Environment::NewEnclosedEnvironment(env);
+
+      // パラメータをバインド
+      for (size_t i = 0; i < fn->parameters.size(); i++)
       {
         newEnv->Set(fn->parameters[i], args[i]);
       }
 
-      auto evaluator = Evaluator();
-      evaluator.env = newEnv;
-      return evaluator.eval(fn->body);
+      // 現在の環境を一時的に保存
+      auto savedEnv = env;
+      // 新しい環境を設定
+      env = newEnv;
+
+      // 関数本体を評価
+      auto result = evalBlockStatement(fn->body);
+
+      // 環境を元に戻す
+      env = savedEnv;
+
+      // ReturnValueの場合は、内部の値を返す
+      if (auto returnValue = std::dynamic_pointer_cast<ReturnValue>(result))
+      {
+        return returnValue->value;
+      }
+
+      return result;
+    }
+
+    // ビルトイン関数の場合
+    if (auto builtin = std::dynamic_pointer_cast<Builtin>(function))
+    {
+      return builtin->fn(args);
     }
 
     return newError("not a function: " + objectTypeToString(function->type()));
@@ -588,7 +650,8 @@ namespace monkey
     return eval(exprStmt->expression.get());
   }
 
-  Evaluator::Evaluator() : env(Environment::NewEnvironment()) {
+  Evaluator::Evaluator() : env(Environment::NewEnvironment())
+  {
     env->Set("len", std::make_shared<Builtin>(builtinLen));
     env->Set("first", std::make_shared<Builtin>(builtinFirst));
     env->Set("last", std::make_shared<Builtin>(builtinLast));
@@ -596,155 +659,178 @@ namespace monkey
     env->Set("push", std::make_shared<Builtin>(builtinPush));
   }
 
-  void Evaluator::collectGarbage() {
-    if (env) {
+  void Evaluator::collectGarbage()
+  {
+    if (env)
+    {
       env->MarkAndSweep();
     }
   }
 
-  ObjectPtr Evaluator::evalArrayLiteral(const AST::ArrayLiteral* array) {
-    if (!array) {
-        return std::make_shared<Null>();
+  ObjectPtr Evaluator::evalArrayLiteral(const AST::ArrayLiteral *array)
+  {
+    if (!array)
+    {
+      return std::make_shared<Null>();
     }
 
     std::vector<ObjectPtr> elements;
     elements.reserve(array->elements.size());
 
-    for (const auto& elem : array->elements) {
-        if (!elem) continue;
-        
-        auto evaluated = eval(elem.get());
-        if (isError(evaluated)) {
-            return evaluated;
-        }
-        elements.push_back(evaluated);
+    for (const auto &elem : array->elements)
+    {
+      if (!elem)
+        continue;
+
+      auto evaluated = eval(elem.get());
+      if (isError(evaluated))
+      {
+        return evaluated;
+      }
+      elements.push_back(evaluated);
     }
 
     return std::make_shared<Array>(std::move(elements));
   }
 
-  ObjectPtr Evaluator::evalIndexExpression(const AST::IndexExpression* indexExpr) {
-    if (!indexExpr || !indexExpr->left || !indexExpr->index) {
-        return newError("invalid index expression");
+  ObjectPtr Evaluator::evalIndexExpression(const AST::IndexExpression *indexExpr)
+  {
+    if (!indexExpr || !indexExpr->left || !indexExpr->index)
+    {
+      return newError("invalid index expression");
     }
 
     auto left = eval(indexExpr->left.get());
-    if (isError(left)) {
-        return left;
+    if (isError(left))
+    {
+      return left;
     }
 
     auto index = eval(indexExpr->index.get());
-    if (isError(index)) {
-        return index;
+    if (isError(index))
+    {
+      return index;
     }
 
-    if (auto array = std::dynamic_pointer_cast<Array>(left)) {
-        return evalArrayIndexExpression(left, index);
+    if (left->type() == ObjectType::ARRAY)
+    {
+      return evalArrayIndexExpression(left, index);
+    }
+    else if (left->type() == ObjectType::HASH)
+    {
+      return evalHashIndexExpression(left, index);
     }
 
     return newError("index operator not supported: " + objectTypeToString(left->type()));
   }
 
-  ObjectPtr Evaluator::evalArrayIndexExpression(const ObjectPtr& array, const ObjectPtr& index) {
+  ObjectPtr Evaluator::evalArrayIndexExpression(const ObjectPtr &array, const ObjectPtr &index)
+  {
     auto arrayObj = std::dynamic_pointer_cast<Array>(array);
-    if (!arrayObj) {
-        return newError("not an array");
+    if (!arrayObj)
+    {
+      return newError("not an array");
     }
 
     auto intIndex = std::dynamic_pointer_cast<Integer>(index);
-    if (!intIndex) {
-        return newError("array index must be an integer");
+    if (!intIndex)
+    {
+      return newError("array index must be an integer");
     }
 
     auto idx = intIndex->value();
     auto max = static_cast<int64_t>(arrayObj->elements.size());
 
-    if (idx < 0 || idx >= max) {
-        return std::make_shared<Null>();
+    if (idx < 0 || idx >= max)
+    {
+      return std::make_shared<Null>();
     }
 
     return arrayObj->elements[idx];
   }
 
-  std::string Evaluator::objectTypeToString(ObjectType type) {
-    switch (type) {
-      case ObjectType::INTEGER:
-        return "INTEGER";
-      case ObjectType::BOOLEAN:
-        return "BOOLEAN";
-      case ObjectType::STRING:
-        return "STRING";
-      case ObjectType::NULL_OBJ:
-        return "NULL";
-      case ObjectType::ERROR:
-        return "ERROR";
-      case ObjectType::ARRAY:
-        return "ARRAY";
-      case ObjectType::HASH:
-        return "HASH";
-      case ObjectType::FUNCTION:
-        return "FUNCTION";
-      case ObjectType::BUILTIN:
-        return "BUILTIN";
-      case ObjectType::RETURN_VALUE:
-        return "RETURN_VALUE";
-      default:
-        return "UNKNOWN";
+  std::string Evaluator::objectTypeToString(ObjectType type)
+  {
+    switch (type)
+    {
+    case ObjectType::INTEGER:
+      return "INTEGER";
+    case ObjectType::BOOLEAN:
+      return "BOOLEAN";
+    case ObjectType::STRING:
+      return "STRING";
+    case ObjectType::NULL_OBJ:
+      return "NULL";
+    case ObjectType::ERROR:
+      return "ERROR";
+    case ObjectType::ARRAY:
+      return "ARRAY";
+    case ObjectType::HASH:
+      return "HASH";
+    case ObjectType::FUNCTION:
+      return "FUNCTION";
+    case ObjectType::BUILTIN:
+      return "BUILTIN";
+    case ObjectType::RETURN_VALUE:
+      return "RETURN_VALUE";
+    default:
+      return "UNKNOWN";
     }
   }
 
-  ObjectPtr Evaluator::evalHashLiteral(const AST::HashLiteral* node) {
-    if (!node) {
-        return std::make_shared<Null>();
+  ObjectPtr Evaluator::evalHashLiteral(const AST::HashLiteral *node)
+  {
+    if (!node)
+    {
+      return std::make_shared<Null>();
     }
 
     auto hash = std::make_shared<Hash>();
 
-    for (const auto& pair : node->pairs) {
-        auto key = eval(pair.first.get());
-        if (isError(key)) return key;
+    for (const auto &pair : node->pairs)
+    {
+      auto key = eval(pair.first.get());
+      if (isError(key))
+        return key;
 
-        auto hashKey = dynamic_cast<HashKey*>(key.get());
-        if (!hashKey) {
-            return newError("unusable as hash key: " + objectTypeToString(key->type()));
-        }
+      auto hashKey = dynamic_cast<HashKey *>(key.get());
+      if (!hashKey)
+      {
+        return newError("unusable as hash key: " + objectTypeToString(key->type()));
+      }
 
-        auto value = eval(pair.second.get());
-        if (isError(value)) return value;
+      auto value = eval(pair.second.get());
+      if (isError(value))
+        return value;
 
-        size_t hashValue = hashKey->hash();
-        hash->pairs[hashValue] = HashPair(key, value);
+      size_t hashValue = hashKey->hash();
+      hash->pairs[hashValue] = HashPair(key, value);
     }
 
     return hash;
   }
 
-  ObjectPtr Evaluator::evalHashIndexExpression(const ObjectPtr& hash, const ObjectPtr& index) {
+  ObjectPtr Evaluator::evalHashIndexExpression(const ObjectPtr &hash, const ObjectPtr &index)
+  {
     auto hashObj = std::dynamic_pointer_cast<Hash>(hash);
-    if (!hashObj) {
-        return newError("index operator not supported: " + objectTypeToString(hash->type()));
+    if (!hashObj)
+    {
+      return newError("index operator not supported: " + objectTypeToString(hash->type()));
     }
 
-    auto hashKey = dynamic_cast<HashKey*>(index.get());
-    if (!hashKey) {
-        return newError("unusable as hash key: " + objectTypeToString(index->type()));
+    auto hashKey = dynamic_cast<HashKey *>(index.get());
+    if (!hashKey)
+    {
+      return newError("unusable as hash key: " + objectTypeToString(index->type()));
     }
 
     auto pair = hashObj->pairs.find(hashKey->hash());
-    if (pair == hashObj->pairs.end()) {
-        return std::make_shared<Null>();
+    if (pair == hashObj->pairs.end())
+    {
+      return std::make_shared<Null>();
     }
 
     return pair->second.value;
-  }
-
-  ObjectPtr Evaluator::evalIndexExpression(const ObjectPtr& left, const ObjectPtr& index) {
-    if (left->type() == ObjectType::ARRAY) {
-        return evalArrayIndexExpression(left, index);
-    } else if (left->type() == ObjectType::HASH) {
-        return evalHashIndexExpression(left, index);
-    }
-    return newError("index operator not supported: " + objectTypeToString(left->type()));
   }
 
 } // namespace monkey
