@@ -48,6 +48,9 @@ namespace Parser
       registerInfix(op, [this](auto left)
                     { return parseInfixExpression(std::move(left)); });
     }
+
+    registerInfix(Token::TokenType::LPAREN, [this](auto left)
+                  { return parseCallExpression(std::move(left)); });
   }
 
   void Parser::registerPrefix(Token::TokenType type, PrefixParseFn fn)
@@ -416,6 +419,47 @@ namespace Parser
     }
 
     return block;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseCallExpression(std::unique_ptr<AST::Expression> function)
+  {
+    trace("START parseCallExpression");
+    increaseIndent();
+
+    auto exp = std::make_unique<AST::CallExpression>(curToken, std::move(function));
+    exp->arguments = parseExpressionList(Token::TokenType::RPAREN);
+
+    decreaseIndent();
+    trace("END parseCallExpression");
+    return exp;
+  }
+
+  std::vector<std::unique_ptr<AST::Expression>> Parser::parseExpressionList(Token::TokenType end)
+  {
+    std::vector<std::unique_ptr<AST::Expression>> args;
+
+    if (peekTokenIs(end))
+    {
+      nextToken();
+      return args;
+    }
+
+    nextToken();
+    args.push_back(parseExpression(Precedence::LOWEST));
+
+    while (peekTokenIs(Token::TokenType::COMMA))
+    {
+      nextToken(); // consume comma
+      nextToken();
+      args.push_back(parseExpression(Precedence::LOWEST));
+    }
+
+    if (!expectPeek(end))
+    {
+      return std::vector<std::unique_ptr<AST::Expression>>();
+    }
+
+    return args;
   }
 
 } // namespace Parser

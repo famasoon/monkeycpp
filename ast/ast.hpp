@@ -170,7 +170,7 @@ namespace AST
     std::string TokenLiteral() const override { return token.literal; }
     std::string String() const override
     {
-      return "(" + left->String() + op + right->String() + ")";
+      return "(" + left->String() + " " + op + " " + right->String() + ")";
     }
   };
 
@@ -206,6 +206,37 @@ namespace AST
         out += body->String();
       }
 
+      return out;
+    }
+  };
+
+  // 呼び出し式を表すクラス
+  class CallExpression : public Expression
+  {
+  public:
+    Token::Token token;                   // '(' トークン
+    std::unique_ptr<Expression> function; // 関数（Identifier または FunctionLiteral）
+    std::vector<std::unique_ptr<Expression>> arguments;
+
+    CallExpression(Token::Token token, std::unique_ptr<Expression> function)
+        : token(std::move(token)), function(std::move(function)) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override
+    {
+      std::string out = function->String() + "(";
+
+      for (size_t i = 0; i < arguments.size(); i++)
+      {
+        out += arguments[i]->String();
+        if (i < arguments.size() - 1)
+        {
+          out += ", ";
+        }
+      }
+
+      out += ")";
       return out;
     }
   };

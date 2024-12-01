@@ -255,3 +255,77 @@ TEST_F(ParserTest, TestFunctionParameterParsing)
     }
   }
 }
+
+TEST_F(ParserTest, TestCallExpression)
+{
+  const std::string input = "add(1, 2 * 3, 4 + 5);";
+
+  auto [program, parser_owner, parser] = ParseInput(input);
+  ASSERT_NE(program.get(), nullptr);
+  ASSERT_TRUE(parser->Errors().empty()) << "Parser errors: " << parser->Errors()[0];
+  ASSERT_EQ(program->statements.size(), 1);
+
+  auto stmt = dynamic_cast<AST::ExpressionStatement *>(program->statements[0].get());
+  ASSERT_NE(stmt, nullptr);
+
+  auto exp = dynamic_cast<AST::CallExpression *>(stmt->expression.get());
+  ASSERT_NE(exp, nullptr);
+
+  auto ident = dynamic_cast<AST::Identifier *>(exp->function.get());
+  ASSERT_NE(ident, nullptr);
+  EXPECT_EQ(ident->value, "add");
+
+  ASSERT_EQ(exp->arguments.size(), 3);
+
+  // First argument
+  auto first = dynamic_cast<AST::IntegerLiteral *>(exp->arguments[0].get());
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first->value, 1);
+
+  // Second argument (2 * 3)
+  auto second = dynamic_cast<AST::InfixExpression *>(exp->arguments[1].get());
+  ASSERT_NE(second, nullptr);
+  EXPECT_EQ(second->op, "*");
+
+  // Third argument (4 + 5)
+  auto third = dynamic_cast<AST::InfixExpression *>(exp->arguments[2].get());
+  ASSERT_NE(third, nullptr);
+  EXPECT_EQ(third->op, "+");
+}
+
+TEST_F(ParserTest, TestCallExpressionParameter)
+{
+  struct Test
+  {
+    std::string input;
+    std::string expectedIdent;
+    std::vector<std::string> expectedArgs;
+  };
+
+  std::vector<Test> tests = {
+      {"add();", "add", {}},
+      {"add(1);", "add", {"1"}},
+      {"add(1, 2 * 3, 4 + 5);", "add", {"1", "(2 * 3)", "(4 + 5)"}},
+  };
+
+  for (const auto &tt : tests)
+  {
+    auto [program, parser_owner, parser] = ParseInput(tt.input);
+    ASSERT_NE(program.get(), nullptr);
+    ASSERT_TRUE(parser->Errors().empty()) << "Parser errors: " << parser->Errors()[0];
+
+    auto stmt = dynamic_cast<AST::ExpressionStatement *>(program->statements[0].get());
+    auto exp = dynamic_cast<AST::CallExpression *>(stmt->expression.get());
+
+    auto ident = dynamic_cast<AST::Identifier *>(exp->function.get());
+    EXPECT_EQ(ident->value, tt.expectedIdent);
+
+    ASSERT_EQ(exp->arguments.size(), tt.expectedArgs.size());
+
+    for (size_t i = 0; i < tt.expectedArgs.size(); i++)
+    {
+      std::string argStr = exp->arguments[i]->String();
+      EXPECT_EQ(argStr, tt.expectedArgs[i]);
+    }
+  }
+}
