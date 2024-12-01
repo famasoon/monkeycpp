@@ -63,6 +63,10 @@ namespace Token
       return "RETURN";
     case TokenType::STRING:
       return "STRING";
+    case TokenType::LBRACKET:
+      return "LBRACKET";
+    case TokenType::RBRACKET:
+      return "RBRACKET";
     default:
       return "UNKNOWN";
     }
@@ -96,5 +100,7 @@ namespace Token
   const std::string Token::IF = "IF";
   const std::string Token::ELSE = "ELSE";
   const std::string Token::RETURN = "RETURN";
+  const std::string Token::LBRACKET = "[";
+  const std::string Token::RBRACKET = "]";
 
 } // namespace Token
