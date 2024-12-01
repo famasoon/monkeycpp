@@ -80,154 +80,165 @@ TEST(ParserTest, TestReturnStatements)
 
 TEST(ParserTest, TestLetStatementErrors)
 {
-    const std::string input = R"(
+  const std::string input = R"(
         let = 5;
         let x 5;
         let 838383;
     )";
 
-    Lexer::Lexer l(input);
-    Parser::Parser p(l);
+  Lexer::Lexer l(input);
+  Parser::Parser p(l);
 
-    auto program = p.ParseProgram();
-    auto errors = p.Errors();
+  auto program = p.ParseProgram();
+  auto errors = p.Errors();
 
-    // エラーが3つあることを確認
-    ASSERT_GE(errors.size(), 3);
+  // エラーが3つあることを確認
+  ASSERT_GE(errors.size(), 3);
 
-    // エラーメッセージの内容をチェック
-    bool hasIdentError = false;
-    bool hasAssignError = false;
-    bool hasExpressionError = false;
+  // エラーメッセージの内容をチェック
+  bool hasIdentError = false;
+  bool hasAssignError = false;
+  bool hasExpressionError = false;
 
-    for (const auto& error : errors) {
-        if (error.find("IDENT") != std::string::npos) {
-            hasIdentError = true;
-        }
-        if (error.find("ASSIGN") != std::string::npos) {
-            hasAssignError = true;
-        }
-        if (error.find("expression") != std::string::npos) {
-            hasExpressionError = true;
-        }
+  for (const auto &error : errors)
+  {
+    if (error.find("IDENT") != std::string::npos)
+    {
+      hasIdentError = true;
     }
+    if (error.find("ASSIGN") != std::string::npos)
+    {
+      hasAssignError = true;
+    }
+    if (error.find("expression") != std::string::npos)
+    {
+      hasExpressionError = true;
+    }
+  }
 
-    EXPECT_TRUE(hasIdentError) << "Expected IDENT error";
-    EXPECT_TRUE(hasAssignError) << "Expected ASSIGN error";
+  EXPECT_TRUE(hasIdentError) << "Expected IDENT error";
+  EXPECT_TRUE(hasAssignError) << "Expected ASSIGN error";
 }
 
 TEST(ParserTest, TestInvalidExpressionError)
 {
-    const std::string input = "!;";
+  const std::string input = "!;";
 
-    Lexer::Lexer l(input);
-    Parser::Parser p(l);
+  Lexer::Lexer l(input);
+  Parser::Parser p(l);
 
-    auto program = p.ParseProgram();
-    auto errors = p.Errors();
+  auto program = p.ParseProgram();
+  auto errors = p.Errors();
 
-    ASSERT_FALSE(errors.empty());
-    bool hasError = false;
-    for (const auto& error : errors) {
-        if (error.find("parse") != std::string::npos || 
-            error.find("expression") != std::string::npos) {
-            hasError = true;
-            break;
-        }
+  ASSERT_FALSE(errors.empty());
+  bool hasError = false;
+  for (const auto &error : errors)
+  {
+    if (error.find("parse") != std::string::npos ||
+        error.find("expression") != std::string::npos)
+    {
+      hasError = true;
+      break;
     }
-    EXPECT_TRUE(hasError) << "Expected parsing error message";
+  }
+  EXPECT_TRUE(hasError) << "Expected parsing error message";
 }
 
 TEST(ParserTest, TestMissingSemicolonError)
 {
-    const std::string input = R"(
+  const std::string input = R"(
         let x = 5
         let y = 10;
     )";
 
-    Lexer::Lexer l(input);
-    Parser::Parser p(l);
+  Lexer::Lexer l(input);
+  Parser::Parser p(l);
 
-    auto program = p.ParseProgram();
-    auto errors = p.Errors();
+  auto program = p.ParseProgram();
+  auto errors = p.Errors();
 
-    ASSERT_FALSE(errors.empty());
-    bool hasError = false;
-    for (const auto& error : errors) {
-        if (error.find("semicolon") != std::string::npos || 
-            error.find("expression") != std::string::npos) {
-            hasError = true;
-            break;
-        }
+  ASSERT_FALSE(errors.empty());
+  bool hasError = false;
+  for (const auto &error : errors)
+  {
+    if (error.find("semicolon") != std::string::npos ||
+        error.find("expression") != std::string::npos)
+    {
+      hasError = true;
+      break;
     }
-    EXPECT_TRUE(hasError) << "Expected semicolon error message";
+  }
+  EXPECT_TRUE(hasError) << "Expected semicolon error message";
 }
 
 TEST(ParserTest, TestReturnStatementError)
 {
-    const std::string input = "return";
+  const std::string input = "return";
 
-    Lexer::Lexer l(input);
-    Parser::Parser p(l);
+  Lexer::Lexer l(input);
+  Parser::Parser p(l);
 
-    auto program = p.ParseProgram();
-    auto errors = p.Errors();
+  auto program = p.ParseProgram();
+  auto errors = p.Errors();
 
-    ASSERT_FALSE(errors.empty());
-    bool hasError = false;
-    for (const auto& error : errors) {
-        if (error.find("Failed to parse return value") != std::string::npos ||
-            error.find("expression") != std::string::npos) {
-            hasError = true;
-            break;
-        }
+  ASSERT_FALSE(errors.empty());
+  bool hasError = false;
+  for (const auto &error : errors)
+  {
+    if (error.find("Failed to parse return value") != std::string::npos ||
+        error.find("expression") != std::string::npos)
+    {
+      hasError = true;
+      break;
     }
-    EXPECT_TRUE(hasError) << "Expected return value error message";
+  }
+  EXPECT_TRUE(hasError) << "Expected return value error message";
 }
 
 TEST(ParserTest, TestOperatorPrecedenceParsing)
 {
-    struct Test {
-        std::string input;
-        std::string expected;
-    };
+  struct Test
+  {
+    std::string input;
+    std::string expected;
+  };
 
-    std::vector<Test> tests = {
-        {"-a * b", "((-a) * b)"},
-        {"!-a", "(!(-a))"},
-        {"a + b + c", "((a + b) + c)"},
-        {"a + b - c", "((a + b) - c)"},
-        {"a * b * c", "((a * b) * c)"},
-        {"a * b / c", "((a * b) / c)"},
-        {"a + b / c", "(a + (b / c))"},
-        {"a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"},
-        {"3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"},
-        {"5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"},
-        {"5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"},
-        {"3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"}
-    };
+  std::vector<Test> tests = {
+      {"-a * b", "((-a) * b)"},
+      {"!-a", "(!(-a))"},
+      {"a + b + c", "((a + b) + c)"},
+      {"a + b - c", "((a + b) - c)"},
+      {"a * b * c", "((a * b) * c)"},
+      {"a * b / c", "((a * b) / c)"},
+      {"a + b / c", "(a + (b / c))"},
+      {"a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"},
+      {"3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"},
+      {"5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"},
+      {"5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"},
+      {"3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"}};
 
-    for (const auto& tt : tests) {
-        Lexer::Lexer l(tt.input);
-        Parser::Parser p(l);
-        auto program = p.ParseProgram();
+  for (const auto &tt : tests)
+  {
+    Lexer::Lexer l(tt.input);
+    Parser::Parser p(l);
+    auto program = p.ParseProgram();
 
-        ASSERT_NE(program, nullptr);
-        const auto& errors = p.Errors();
-        ASSERT_TRUE(errors.empty()) << "Parser errors: " << errors[0];
+    ASSERT_NE(program, nullptr);
+    const auto &errors = p.Errors();
+    ASSERT_TRUE(errors.empty()) << "Parser errors: " << errors[0];
 
-        auto actual = program->String();
-        // 空白とセミコロンを無視して比較
-        actual.erase(std::remove(actual.begin(), actual.end(), ' '), actual.end());
-        actual.erase(std::remove(actual.begin(), actual.end(), ';'), actual.end());
-        std::string expected = tt.expected;
-        expected.erase(std::remove(expected.begin(), expected.end(), ' '), expected.end());
+    auto actual = program->String();
+    // 空白とセミコロンを無視して比較
+    actual.erase(std::remove(actual.begin(), actual.end(), ' '), actual.end());
+    actual.erase(std::remove(actual.begin(), actual.end(), ';'), actual.end());
+    std::string expected = tt.expected;
+    expected.erase(std::remove(expected.begin(), expected.end(), ' '), expected.end());
 
-        EXPECT_EQ(actual, expected)
-            << "input=" << tt.input 
-            << " expected=" << tt.expected 
-            << " got=" << actual;
-    }
+    EXPECT_EQ(actual, expected)
+        << "input=" << tt.input
+        << " expected=" << tt.expected
+        << " got=" << actual;
+  }
 }
 
 TEST(ParserTest, TestIdentifierExpression)
