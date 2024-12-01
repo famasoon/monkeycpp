@@ -107,6 +107,12 @@ namespace monkey
     {
       return evalCallExpression(callExpr);
     }
+    if (auto arrayLiteral = dynamic_cast<const AST::ArrayLiteral*>(node)) {
+        return evalArrayLiteral(arrayLiteral);
+    }
+    if (auto indexExpr = dynamic_cast<const AST::IndexExpression*>(node)) {
+        return evalIndexExpression(indexExpr);
+    }
 
     return std::make_shared<Null>();
   }
@@ -201,7 +207,7 @@ namespace monkey
       return evalBooleanInfixExpression(op, leftBool, std::dynamic_pointer_cast<Boolean>(right));
     }
 
-    // 文字列演算
+    // ���字列演算
     std::shared_ptr<String> leftStr = std::dynamic_pointer_cast<String>(left);
     if (leftStr)
     {
@@ -483,6 +489,70 @@ namespace monkey
     if (env) {
       env->MarkAndSweep();
     }
+  }
+
+  ObjectPtr Evaluator::evalArrayLiteral(const AST::ArrayLiteral* array) {
+    if (!array) {
+        return std::make_shared<Null>();
+    }
+
+    std::vector<ObjectPtr> elements;
+    elements.reserve(array->elements.size());
+
+    for (const auto& elem : array->elements) {
+        if (!elem) continue;
+        
+        auto evaluated = eval(elem.get());
+        if (isError(evaluated)) {
+            return evaluated;
+        }
+        elements.push_back(evaluated);
+    }
+
+    return std::make_shared<Array>(std::move(elements));
+  }
+
+  ObjectPtr Evaluator::evalIndexExpression(const AST::IndexExpression* indexExpr) {
+    if (!indexExpr || !indexExpr->left || !indexExpr->index) {
+        return newError("invalid index expression");
+    }
+
+    auto left = eval(indexExpr->left.get());
+    if (isError(left)) {
+        return left;
+    }
+
+    auto index = eval(indexExpr->index.get());
+    if (isError(index)) {
+        return index;
+    }
+
+    if (auto array = std::dynamic_pointer_cast<Array>(left)) {
+        return evalArrayIndexExpression(left, index);
+    }
+
+    return newError("index operator not supported: " + objectTypeToString(left->type()));
+  }
+
+  ObjectPtr Evaluator::evalArrayIndexExpression(const ObjectPtr& array, const ObjectPtr& index) {
+    auto arrayObj = std::dynamic_pointer_cast<Array>(array);
+    if (!arrayObj) {
+        return newError("not an array");
+    }
+
+    auto intIndex = std::dynamic_pointer_cast<Integer>(index);
+    if (!intIndex) {
+        return newError("array index must be an integer");
+    }
+
+    auto idx = intIndex->value();
+    auto max = static_cast<int64_t>(arrayObj->elements.size());
+
+    if (idx < 0 || idx >= max) {
+        return std::make_shared<Null>();
+    }
+
+    return arrayObj->elements[idx];
   }
 
 } // namespace monkey

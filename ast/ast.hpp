@@ -204,6 +204,31 @@ namespace AST
     const std::string& getValue() const { return value; }
   };
 
+  // 配列リテラル
+  class ArrayLiteral : public Expression {
+  public:
+    Token::Token token;  // '['トークン
+    std::vector<std::unique_ptr<Expression>> elements;
+
+    explicit ArrayLiteral(Token::Token token);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+  };
+
+  // インデックス式
+  class IndexExpression : public Expression {
+  public:
+    Token::Token token;  // '['トークン
+    std::unique_ptr<Expression> left;
+    std::unique_ptr<Expression> index;
+
+    IndexExpression(Token::Token token, std::unique_ptr<Expression> left);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+  };
+
   enum class ExpressionType {
     // 既存の型...
     StringLiteral,

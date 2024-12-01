@@ -44,7 +44,10 @@ namespace Token
     FALSE,
     IF,
     ELSE,
-    RETURN
+    RETURN,
+
+    LBRACKET,  // [
+    RBRACKET,  // ]
   };
 
   // TokenTypeを文字列に変換する関数
@@ -114,6 +117,8 @@ namespace Token
     static const std::string IF;
     static const std::string ELSE;
     static const std::string RETURN;
+    static const std::string LBRACKET;
+    static const std::string RBRACKET;
   };
 
 } // namespace Token

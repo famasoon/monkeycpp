@@ -63,6 +63,11 @@ namespace monkey
     // エラーハンドリング
     ObjectPtr newError(const std::string &message);
     std::string objectTypeToString(ObjectType type);
+
+    // 配列関連の評価
+    ObjectPtr evalArrayLiteral(const AST::ArrayLiteral* array);
+    ObjectPtr evalIndexExpression(const AST::IndexExpression* indexExpr);
+    ObjectPtr evalArrayIndexExpression(const ObjectPtr& array, const ObjectPtr& index);
   };
 
 } // namespace monkey

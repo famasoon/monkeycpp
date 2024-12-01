@@ -13,6 +13,7 @@ namespace Parser
       {Token::TokenType::SLASH, Precedence::PRODUCT},
       {Token::TokenType::ASTERISK, Precedence::PRODUCT},
       {Token::TokenType::LPAREN, Precedence::CALL},
+      {Token::TokenType::LBRACKET, Precedence::INDEX},
   };
 
   Parser::Parser(std::unique_ptr<Lexer::Lexer> lexer) : lexer(std::move(lexer)),
@@ -39,12 +40,16 @@ namespace Parser
                    { return parseGroupedExpression(); });
     registerPrefix(Token::TokenType::STRING, [this]
                    { return parseStringLiteral(); });
+    registerPrefix(Token::TokenType::LBRACKET, [this]
+                   { return parseArrayLiteral(); });
 
     const std::vector<Token::TokenType> infixOps = {
         Token::TokenType::PLUS, Token::TokenType::MINUS,
         Token::TokenType::SLASH, Token::TokenType::ASTERISK,
         Token::TokenType::EQ, Token::TokenType::NOT_EQ,
-        Token::TokenType::LT, Token::TokenType::GT};
+        Token::TokenType::LT, Token::TokenType::GT,
+        Token::TokenType::LBRACKET,
+    };
 
     for (const auto &op : infixOps)
     {
@@ -54,6 +59,8 @@ namespace Parser
 
     registerInfix(Token::TokenType::LPAREN, [this](auto left)
                   { return parseCallExpression(std::move(left)); });
+    registerInfix(Token::TokenType::LBRACKET, [this](auto left)
+                  { return parseIndexExpression(std::move(left)); });
   }
 
   void Parser::registerPrefix(Token::TokenType type, PrefixParseFn fn)
@@ -495,6 +502,46 @@ namespace Parser
 
   std::unique_ptr<AST::Expression> Parser::parseStringLiteral() {
     return std::make_unique<AST::StringLiteral>(curToken, curToken.literal);
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseArrayLiteral() {
+    trace("START parseArrayLiteral");
+    increaseIndent();
+
+    auto array = std::make_unique<AST::ArrayLiteral>(curToken);
+
+    array->elements = parseExpressionList(Token::TokenType::RBRACKET);
+
+    decreaseIndent();
+    trace("END parseArrayLiteral");
+    return array;
+  }
+
+  std::unique_ptr<AST::Expression> Parser::parseIndexExpression(std::unique_ptr<AST::Expression> left) {
+    trace("START parseIndexExpression");
+    increaseIndent();
+
+    auto expr = std::make_unique<AST::IndexExpression>(curToken, std::move(left));
+
+    // '[' の次のトークンへ
+    nextToken();
+
+    expr->index = parseExpression(Precedence::LOWEST);
+    if (!expr->index) {
+        decreaseIndent();
+        trace("Failed to parse index expression");
+        return nullptr;
+    }
+
+    if (!expectPeek(Token::TokenType::RBRACKET)) {
+        decreaseIndent();
+        trace("Expected ']'");
+        return nullptr;
+    }
+
+    decreaseIndent();
+    trace("END parseIndexExpression");
+    return expr;
   }
 
 } // namespace Parser

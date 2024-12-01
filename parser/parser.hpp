@@ -51,7 +51,8 @@ namespace Parser
       SUM,         // +
       PRODUCT,     // *
       PREFIX,      // -X または !X
-      CALL         // myFunction(X)
+      CALL,        // myFunction(X)
+      INDEX        // array[index]
     };
 
     static std::unordered_map<Token::TokenType, Precedence> precedences;
@@ -98,6 +99,10 @@ namespace Parser
     std::unique_ptr<AST::Expression> parseBoolean();
     std::unique_ptr<AST::Expression> parseGroupedExpression();
     std::unique_ptr<AST::Expression> parseStringLiteral();
+
+    // パース関数
+    std::unique_ptr<AST::Expression> parseArrayLiteral();
+    std::unique_ptr<AST::Expression> parseIndexExpression(std::unique_ptr<AST::Expression> left);
   };
 
 } // namespace Parser

@@ -266,4 +266,41 @@ namespace AST
   {
     return "\"" + value + "\"";
   }
+
+  // ArrayLiteral実装
+  ArrayLiteral::ArrayLiteral(Token::Token token) : token(std::move(token)) {}
+
+  void ArrayLiteral::expressionNode() {}
+
+  std::string ArrayLiteral::TokenLiteral() const {
+      return token.literal;
+  }
+
+  std::string ArrayLiteral::String() const {
+      std::string out = "[";
+      for (size_t i = 0; i < elements.size(); ++i) {
+          if (elements[i]) {
+              out += elements[i]->String();
+          }
+          if (i < elements.size() - 1) {
+              out += ", ";
+          }
+      }
+      out += "]";
+      return out;
+  }
+
+  // IndexExpression実装
+  IndexExpression::IndexExpression(Token::Token token, std::unique_ptr<Expression> left)
+      : token(std::move(token)), left(std::move(left)) {}
+
+  void IndexExpression::expressionNode() {}
+
+  std::string IndexExpression::TokenLiteral() const {
+      return token.literal;
+  }
+
+  std::string IndexExpression::String() const {
+      return "(" + left->String() + "[" + index->String() + "])";
+  }
 } // namespace AST

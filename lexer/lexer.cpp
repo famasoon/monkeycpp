@@ -159,6 +159,12 @@ namespace Lexer
       tok.type = Token::TokenType::STRING;
       tok.literal = readString();
       return tok;
+    case '[':
+      tok = {Token::TokenType::LBRACKET, "["};
+      break;
+    case ']':
+      tok = {Token::TokenType::RBRACKET, "]"};
+      break;
     default:
       if (std::isalpha(ch) || ch == '_')
       {
