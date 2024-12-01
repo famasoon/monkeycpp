@@ -369,6 +369,11 @@ namespace Parser
     }
 
     lit->body = parseBlockStatement();
+    if (!lit->body)
+    {
+      decreaseIndent();
+      return nullptr;
+    }
 
     decreaseIndent();
     trace("END parseFunctionLiteral");
@@ -406,7 +411,6 @@ namespace Parser
   std::unique_ptr<AST::BlockStatement> Parser::parseBlockStatement()
   {
     auto block = std::make_unique<AST::BlockStatement>(curToken);
-
     nextToken();
 
     while (!curTokenIs(Token::TokenType::RBRACE) && !curTokenIs(Token::TokenType::EOF_))
@@ -416,6 +420,12 @@ namespace Parser
         block->statements.push_back(std::move(stmt));
       }
       nextToken();
+    }
+
+    if (!curTokenIs(Token::TokenType::RBRACE))
+    {
+      registerError("Expected '}' at the end of block statement");
+      return nullptr;
     }
 
     return block;
