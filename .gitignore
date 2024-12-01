@@ -1,6 +1,7 @@
 # 実行ファイル
 monkey
 monkey_test
+evaluator_test
 
 # コンパイル成果物
 *.o
