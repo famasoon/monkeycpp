@@ -39,34 +39,20 @@ namespace AST
     std::string String() const override;
   };
 
-  // ブロック文を先に定義
+  // ブロック文
   class BlockStatement : public Statement
   {
   public:
-    Token::Token token; // '{' トークン
+    Token::Token token;
     std::vector<std::unique_ptr<Statement>> statements;
 
-    BlockStatement(Token::Token token)
-        : token(std::move(token)) {}
-
-    void statementNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      std::string out = "{ ";
-      for (const auto &stmt : statements)
-      {
-        if (stmt)
-        {
-          out += stmt->String();
-        }
-      }
-      out += " }";
-      return out;
-    }
+    explicit BlockStatement(Token::Token token);
+    void statementNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
-  // 識別子を表すクラス
+  // 識別子
   class Identifier : public Expression
   {
   public:
@@ -74,13 +60,12 @@ namespace AST
     std::string value;
 
     Identifier(Token::Token token, std::string value);
-
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
   };
 
-  // let文を表すクラス
+  // let文
   class LetStatement : public Statement
   {
   public:
@@ -88,55 +73,52 @@ namespace AST
     std::unique_ptr<Identifier> name;
     std::unique_ptr<Expression> value;
 
-    LetStatement(Token::Token token);
-
+    explicit LetStatement(Token::Token token);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
   };
 
-  // return文を表すクラス
+  // return文
   class ReturnStatement : public Statement
   {
   public:
     Token::Token token;
     std::unique_ptr<Expression> returnValue;
 
-    ReturnStatement(Token::Token token);
-
+    explicit ReturnStatement(Token::Token token);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
   };
 
-  // 式文を表すクラス
+  // 式文
   class ExpressionStatement : public Statement
   {
   public:
     Token::Token token;
     std::unique_ptr<Expression> expression;
 
-    ExpressionStatement(Token::Token token);
-
+    explicit ExpressionStatement(Token::Token token);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
   };
 
+  // 整数リテラル
   class IntegerLiteral : public Expression
   {
   public:
     Token::Token token;
     int64_t value;
 
-    IntegerLiteral(Token::Token token, int64_t value)
-        : token(std::move(token)), value(value) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override { return token.literal; }
+    IntegerLiteral(Token::Token token, int64_t value);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
+  // 前置式
   class PrefixExpression : public Expression
   {
   public:
@@ -144,17 +126,13 @@ namespace AST
     std::string op;
     std::unique_ptr<Expression> right;
 
-    PrefixExpression(Token::Token token, std::string op)
-        : token(std::move(token)), op(std::move(op)) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      return "(" + op + right->String() + ")";
-    }
+    PrefixExpression(Token::Token token, std::string op);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
+  // 中置式
   class InfixExpression : public Expression
   {
   public:
@@ -163,33 +141,26 @@ namespace AST
     std::unique_ptr<Expression> left;
     std::unique_ptr<Expression> right;
 
-    InfixExpression(Token::Token token, std::string op, std::unique_ptr<Expression> left)
-        : token(std::move(token)), op(std::move(op)), left(std::move(left)) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      return "(" + left->String() + " " + op + " " + right->String() + ")";
-    }
+    InfixExpression(Token::Token token, std::string op, std::unique_ptr<Expression> left);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
-  // BooleanLiteralクラスを追加
+  // 真偽値リテラル
   class BooleanLiteral : public Expression
   {
   public:
     Token::Token token;
     bool value;
 
-    BooleanLiteral(Token::Token token, bool value)
-        : token(std::move(token)), value(value) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override { return token.literal; }
+    BooleanLiteral(Token::Token token, bool value);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
-  // Function リテラルを最後に定義
+  // 関数リテラル
   class FunctionLiteral : public Expression
   {
   public:
@@ -197,77 +168,37 @@ namespace AST
     std::vector<std::unique_ptr<Identifier>> parameters;
     std::unique_ptr<BlockStatement> body;
 
-    FunctionLiteral(Token::Token token)
-        : token(std::move(token)) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      std::string out = token.literal + "(";
-
-      for (size_t i = 0; i < parameters.size(); i++)
-      {
-        out += parameters[i]->String();
-        if (i < parameters.size() - 1)
-        {
-          out += ", ";
-        }
-      }
-
-      out += ") ";
-      if (body)
-      {
-        out += body->String();
-      }
-
-      return out;
-    }
+    explicit FunctionLiteral(Token::Token token);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
-  // 呼び出し式を表すクラス
+  // 呼び出し式
   class CallExpression : public Expression
   {
   public:
-    Token::Token token;                   // '(' トークン
-    std::unique_ptr<Expression> function; // 関数（Identifier または FunctionLiteral）
+    Token::Token token;
+    std::unique_ptr<Expression> function;
     std::vector<std::unique_ptr<Expression>> arguments;
 
-    CallExpression(Token::Token token, std::unique_ptr<Expression> function)
-        : token(std::move(token)), function(std::move(function)) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override
-    {
-      std::string out = function->String() + "(";
-
-      for (size_t i = 0; i < arguments.size(); i++)
-      {
-        out += arguments[i]->String();
-        if (i < arguments.size() - 1)
-        {
-          out += ", ";
-        }
-      }
-
-      out += ")";
-      return out;
-    }
+    CallExpression(Token::Token token, std::unique_ptr<Expression> function);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
+  // 文字列リテラル
   class StringLiteral : public Expression
   {
   public:
     Token::Token token;
     std::string value;
 
-    StringLiteral(Token::Token token, const std::string &v)
-        : token(std::move(token)), value(v) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override { return value; }
+    StringLiteral(Token::Token token, const std::string &v);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
   };
 
 } // namespace AST

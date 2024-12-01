@@ -5,7 +5,7 @@ namespace AST
   // Program implementation
   std::string Program::TokenLiteral() const
   {
-    if (!statements.empty())
+    if (!statements.empty() && statements[0])
     {
       return statements[0]->TokenLiteral();
     }
@@ -15,13 +15,38 @@ namespace AST
   std::string Program::String() const
   {
     std::string out;
-    for (size_t i = 0; i < statements.size(); i++)
+    for (const auto& stmt : statements)
     {
-      if (!statements[i])
-        continue;
-
-      out += statements[i]->String();
+      if (stmt)
+      {
+        out += stmt->String();
+      }
     }
+    return out;
+  }
+
+  // BlockStatement implementation
+  BlockStatement::BlockStatement(Token::Token token)
+      : token(std::move(token)) {}
+
+  void BlockStatement::statementNode() {}
+
+  std::string BlockStatement::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string BlockStatement::String() const
+  {
+    std::string out = "{ ";
+    for (const auto& stmt : statements)
+    {
+      if (stmt)
+      {
+        out += stmt->String();
+      }
+    }
+    out += " }";
     return out;
   }
 
@@ -54,18 +79,18 @@ namespace AST
 
   std::string LetStatement::String() const
   {
-    std::string result = TokenLiteral() + " ";
+    std::string out = TokenLiteral() + " ";
     if (name)
     {
-      result += name->String();
+      out += name->String();
     }
-    result += " = ";
+    out += " = ";
     if (value)
     {
-      result += value->String();
+      out += value->String();
     }
-    result += ";";
-    return result;
+    out += ";";
+    return out;
   }
 
   // ReturnStatement implementation
@@ -81,13 +106,13 @@ namespace AST
 
   std::string ReturnStatement::String() const
   {
-    std::string result = TokenLiteral() + " ";
+    std::string out = TokenLiteral() + " ";
     if (returnValue)
     {
-      result += returnValue->String();
+      out += returnValue->String();
     }
-    result += ";";
-    return result;
+    out += ";";
+    return out;
   }
 
   // ExpressionStatement implementation
@@ -103,10 +128,142 @@ namespace AST
 
   std::string ExpressionStatement::String() const
   {
-    if (!expression)
-      return "";
+    return expression ? expression->String() : "";
+  }
 
-    // セミコロンを含めない文字列表現を返す
-    return expression->String();
+  // IntegerLiteral implementation
+  IntegerLiteral::IntegerLiteral(Token::Token token, int64_t value)
+      : token(std::move(token)), value(value) {}
+
+  void IntegerLiteral::expressionNode() {}
+
+  std::string IntegerLiteral::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string IntegerLiteral::String() const
+  {
+    return token.literal;
+  }
+
+  // PrefixExpression implementation
+  PrefixExpression::PrefixExpression(Token::Token token, std::string op)
+      : token(std::move(token)), op(std::move(op)) {}
+
+  void PrefixExpression::expressionNode() {}
+
+  std::string PrefixExpression::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string PrefixExpression::String() const
+  {
+    return "(" + op + right->String() + ")";
+  }
+
+  // InfixExpression implementation
+  InfixExpression::InfixExpression(Token::Token token, std::string op, std::unique_ptr<Expression> left)
+      : token(std::move(token)), op(std::move(op)), left(std::move(left)) {}
+
+  void InfixExpression::expressionNode() {}
+
+  std::string InfixExpression::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string InfixExpression::String() const
+  {
+    return "(" + left->String() + " " + op + " " + right->String() + ")";
+  }
+
+  // BooleanLiteral implementation
+  BooleanLiteral::BooleanLiteral(Token::Token token, bool value)
+      : token(std::move(token)), value(value) {}
+
+  void BooleanLiteral::expressionNode() {}
+
+  std::string BooleanLiteral::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string BooleanLiteral::String() const
+  {
+    return token.literal;
+  }
+
+  // FunctionLiteral implementation
+  FunctionLiteral::FunctionLiteral(Token::Token token)
+      : token(std::move(token)) {}
+
+  void FunctionLiteral::expressionNode() {}
+
+  std::string FunctionLiteral::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string FunctionLiteral::String() const
+  {
+    std::string out = token.literal + "(";
+    for (size_t i = 0; i < parameters.size(); i++)
+    {
+      out += parameters[i]->String();
+      if (i < parameters.size() - 1)
+      {
+        out += ", ";
+      }
+    }
+    out += ") ";
+    if (body)
+    {
+      out += body->String();
+    }
+    return out;
+  }
+
+  // CallExpression implementation
+  CallExpression::CallExpression(Token::Token token, std::unique_ptr<Expression> function)
+      : token(std::move(token)), function(std::move(function)) {}
+
+  void CallExpression::expressionNode() {}
+
+  std::string CallExpression::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string CallExpression::String() const
+  {
+    std::string out = function->String() + "(";
+    for (size_t i = 0; i < arguments.size(); i++)
+    {
+      out += arguments[i]->String();
+      if (i < arguments.size() - 1)
+      {
+        out += ", ";
+      }
+    }
+    out += ")";
+    return out;
+  }
+
+  // StringLiteral implementation
+  StringLiteral::StringLiteral(Token::Token token, const std::string& v)
+      : token(std::move(token)), value(v) {}
+
+  void StringLiteral::expressionNode() {}
+
+  std::string StringLiteral::TokenLiteral() const
+  {
+    return token.literal;
+  }
+
+  std::string StringLiteral::String() const
+  {
+    return value;
   }
 } // namespace AST
