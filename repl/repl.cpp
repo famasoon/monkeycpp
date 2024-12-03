@@ -1,64 +1,96 @@
 #include "repl.hpp"
+#include "../lexer/lexer.hpp"
+#include "../parser/parser.hpp"
 #include <iostream>
-#include <string>
 
-namespace monkey
+namespace REPL
 {
 
-const std::string REPL::PROMPT = ">> ";
-
-void REPL::Start(std::istream &in, std::ostream &out)
+REPL::REPL() : evaluator(std::make_unique<monkey::Evaluator>()), 
+               jit(std::make_unique<JIT::Compiler>()), 
+               useJIT(false)
 {
+}
+
+void REPL::Start()
+{
+    std::cout << "Monkey Programming Language\n";
+    std::cout << "Type 'jit' to toggle JIT compilation (currently " 
+              << (useJIT ? "enabled" : "disabled") << ")\n";
+    std::cout << "Type 'exit' to exit\n";
+
     std::string line;
-    Evaluator evaluator;
-
     while (true)
     {
-        out << PROMPT;
-        if (!std::getline(in, line))
-        {
-            return;
-        }
-
-        if (line == "exit" || line == "quit")
-        {
+        std::cout << ">> ";
+        if (!std::getline(std::cin, line))
             break;
+
+        if (line == "exit")
+            break;
+
+        if (line == "jit")
+        {
+            toggleJIT();
+            continue;
         }
 
         auto lexer = std::make_unique<Lexer::Lexer>(line);
         Parser::Parser parser(std::move(lexer));
 
         auto program = parser.ParseProgram();
-        if (!program)
+        if (!program || !parser.Errors().empty())
         {
-            printParserErrors(out, parser.Errors());
+            printParserErrors(parser.Errors());
             continue;
         }
 
-        if (parser.Errors().size() != 0)
+        if (useJIT)
         {
-            printParserErrors(out, parser.Errors());
-            continue;
+            executeWithJIT(*program);
         }
-
-        auto evaluated = evaluator.eval(program.get());
-        if (evaluated)
+        else
         {
-            out << evaluated->inspect() << std::endl;
+            executeWithInterpreter(*program);
         }
-
-        // 定期的にガベージコレクションを実行
-        evaluator.collectGarbage();
     }
 }
 
-void REPL::printParserErrors(std::ostream &out, const std::vector<std::string> &errors)
+void REPL::toggleJIT()
 {
-    out << "parser errors:\n";
-    for (const auto &error : errors)
+    useJIT = !useJIT;
+    std::cout << "JIT compilation " << (useJIT ? "enabled" : "disabled") << "\n";
+}
+
+void REPL::executeWithJIT(const AST::Program& program)
+{
+    try
     {
-        out << "\t" << error << "\n";
+        jit->compile(program);
+        std::cout << "Generated LLVM IR:\n" << jit->getIR() << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "JIT compilation failed: " << e.what() << std::endl;
     }
 }
 
-} // namespace monkey
+void REPL::executeWithInterpreter(const AST::Program& program)
+{
+    auto evaluated = evaluator->eval(&program);
+    if (evaluated)
+    {
+        std::cout << evaluated->inspect() << std::endl;
+    }
+}
+
+void REPL::printParserErrors(const std::vector<std::string>& errors)
+{
+    std::cout << "Parser errors:\n";
+    for (const auto& error : errors)
+    {
+        std::cout << "\t" << error << "\n";
+    }
+}
+
+} // namespace REPL

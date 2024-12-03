@@ -47,6 +47,7 @@ add_executable(monkey
 target_link_libraries(monkey
     monkey_lib
     evaluator
+    jit
 )
 
 # テスト関連

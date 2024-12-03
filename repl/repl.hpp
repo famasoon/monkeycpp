@@ -1,21 +1,29 @@
 #pragma once
 #include "../evaluator/evaluator.hpp"
-#include "../lexer/lexer.hpp"
-#include "../parser/parser.hpp"
-#include <iostream>
+#include "../jit/jit.hpp"
+#include <memory>
+#include <string>
 
-namespace monkey
+namespace REPL
 {
 
 class REPL
 {
-  public:
-    static void Start(std::istream &in = std::cin, std::ostream &out = std::cout);
+private:
+    std::unique_ptr<monkey::Evaluator> evaluator;
+    std::unique_ptr<JIT::Compiler> jit;
+    bool useJIT;
 
-  private:
-    static const std::string PROMPT;
-    static void printParserErrors(std::ostream &out, const std::vector<std::string> &errors);
-    static ObjectPtr evaluateInput(const std::string &input, Evaluator &evaluator);
+public:
+    REPL();
+    void Start();
+    void toggleJIT();
+    bool isJITEnabled() const { return useJIT; }
+
+private:
+    void printParserErrors(const std::vector<std::string>& errors);
+    void executeWithJIT(const AST::Program& program);
+    void executeWithInterpreter(const AST::Program& program);
 };
 
-} // namespace monkey
+} // namespace REPL
