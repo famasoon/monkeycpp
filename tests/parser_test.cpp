@@ -481,3 +481,49 @@ void testInfixExpression(AST::Expression *expr, int64_t left_value,
     ASSERT_NE(rightExpr, nullptr) << "Right expression is not IntegerLiteral";
     EXPECT_EQ(rightExpr->value, right_value);
 }
+
+TEST_F(ParserTest, TestWhileExpression)
+{
+    std::string input = R"(
+        while (x < 5) {
+            let x = x + 1;
+        }
+    )";
+
+    auto [program, parser_owner, parser] = ParseInput(input);
+    ASSERT_NE(program.get(), nullptr);
+    
+    // エラーがある場合は内容を出力
+    if (!parser->Errors().empty()) {
+        std::cout << "Parser errors:" << std::endl;
+        for (const auto& err : parser->Errors()) {
+            std::cout << "\t" << err << std::endl;
+        }
+    }
+    ASSERT_TRUE(parser->Errors().empty());
+
+    ASSERT_EQ(program->statements.size(), 1);
+
+    auto stmt = dynamic_cast<AST::ExpressionStatement*>(program->statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto whileExpr = dynamic_cast<AST::WhileExpression*>(stmt->expression.get());
+    ASSERT_NE(whileExpr, nullptr);
+
+    // 条件式のテスト
+    auto condition = dynamic_cast<AST::InfixExpression*>(whileExpr->condition.get());
+    ASSERT_NE(condition, nullptr);
+    EXPECT_EQ(condition->op, "<");
+
+    auto left = dynamic_cast<AST::Identifier*>(condition->left.get());
+    ASSERT_NE(left, nullptr);
+    EXPECT_EQ(left->value, "x");
+
+    auto right = dynamic_cast<AST::IntegerLiteral*>(condition->right.get());
+    ASSERT_NE(right, nullptr);
+    EXPECT_EQ(right->value, 5);
+
+    // ブロック文のテスト
+    ASSERT_NE(whileExpr->body, nullptr);
+    ASSERT_EQ(whileExpr->body->statements.size(), 1);
+}

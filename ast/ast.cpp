@@ -640,4 +640,36 @@ void Program::addStatement(std::unique_ptr<Statement> stmt)
         statements.push_back(std::move(stmt));
     }
 }
+
+WhileExpression::WhileExpression(Token::Token tok) 
+    : token(std::move(tok)) {}
+
+WhileExpression::WhileExpression(Token::Token tok,
+                                std::unique_ptr<Expression> cond,
+                                std::unique_ptr<BlockStatement> b)
+    : token(std::move(tok))
+    , condition(std::move(cond))
+    , body(std::move(b)) {}
+
+void WhileExpression::expressionNode() {}
+
+std::string WhileExpression::TokenLiteral() const { 
+    return token.literal; 
+}
+
+std::string WhileExpression::String() const {
+    std::string out = "while (" + (condition ? condition->String() : "") + ") ";
+    if (body) {
+        out += body->String();
+    }
+    return out;
+}
+
+Expression* WhileExpression::clone() const {
+    return new WhileExpression(
+        token,
+        condition ? std::unique_ptr<Expression>(condition->clone()) : nullptr,
+        body ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(body->clone())) : nullptr
+    );
+}
 } // namespace AST

@@ -316,30 +316,20 @@ public:
 
 class WhileExpression : public Expression {
 private:
-    Token::Token token;  // 'while'トークン
+    Token::Token token;
+
+public:
     std::unique_ptr<Expression> condition;
     std::unique_ptr<BlockStatement> body;
 
-public:
+    explicit WhileExpression(Token::Token tok);
     WhileExpression(Token::Token tok,
-                   std::unique_ptr<Expression> cond,
-                   std::unique_ptr<BlockStatement> b)
-        : token(std::move(tok)), 
-          condition(std::move(cond)), 
-          body(std::move(b)) {}
-
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
-    std::string String() const override {
-        return "while" + condition->String() + " " + body->String();
-    }
-    Expression* clone() const override {
-        return new WhileExpression(
-            token,
-            std::unique_ptr<Expression>(condition->clone()),
-            std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(body->clone()))
-        );
-    }
+                    std::unique_ptr<Expression> cond,
+                    std::unique_ptr<BlockStatement> b);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    Expression* clone() const override;
 
     const Expression* getCondition() const { return condition.get(); }
     const BlockStatement* getBody() const { return body.get(); }

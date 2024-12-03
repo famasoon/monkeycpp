@@ -1,6 +1,13 @@
 #include "../lexer/lexer.hpp"
 #include <gtest/gtest.h>
 
+// テストケース用の構造体
+struct TestCase
+{
+    Token::TokenType expectedType;
+    std::string expectedLiteral;
+};
+
 TEST(LexerTest, TestNextToken)
 {
     std::string input = R"(
@@ -20,12 +27,6 @@ TEST(LexerTest, TestNextToken)
         10 == 10;
         10 != 9;
     )";
-
-    struct TestCase
-    {
-        Token::TokenType expectedType;
-        std::string expectedLiteral;
-    };
 
     std::vector<TestCase> tests = {
         {Token::TokenType::LET, "let"},     {Token::TokenType::IDENT, "five"},
@@ -73,6 +74,55 @@ TEST(LexerTest, TestNextToken)
     {
         auto tok = lexer.NextToken();
 
+        EXPECT_EQ(tok.type, tests[i].expectedType)
+            << "tests[" << i << "] - tokentype wrong. "
+            << "expected=" << Token::toString(tests[i].expectedType)
+            << ", got=" << Token::toString(tok.type);
+
+        EXPECT_EQ(tok.literal, tests[i].expectedLiteral)
+            << "tests[" << i << "] - literal wrong. "
+            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
+    }
+}
+
+TEST(LexerTest, TestWhileLoop)
+{
+    std::string input = R"(
+        let x = 0;
+        while (x < 5) {
+            let x = x + 1;
+        }
+    )";
+
+    std::vector<TestCase> tests = {
+        {Token::TokenType::LET, "let"},
+        {Token::TokenType::IDENT, "x"},
+        {Token::TokenType::ASSIGN, "="},
+        {Token::TokenType::INT, "0"},
+        {Token::TokenType::SEMICOLON, ";"},
+        {Token::TokenType::WHILE, "while"},
+        {Token::TokenType::LPAREN, "("},
+        {Token::TokenType::IDENT, "x"},
+        {Token::TokenType::LT, "<"},
+        {Token::TokenType::INT, "5"},
+        {Token::TokenType::RPAREN, ")"},
+        {Token::TokenType::LBRACE, "{"},
+        {Token::TokenType::LET, "let"},
+        {Token::TokenType::IDENT, "x"},
+        {Token::TokenType::ASSIGN, "="},
+        {Token::TokenType::IDENT, "x"},
+        {Token::TokenType::PLUS, "+"},
+        {Token::TokenType::INT, "1"},
+        {Token::TokenType::SEMICOLON, ";"},
+        {Token::TokenType::RBRACE, "}"},
+        {Token::TokenType::EOF_, ""},
+    };
+
+    Lexer::Lexer lexer(input);
+
+    for (size_t i = 0; i < tests.size(); i++)
+    {
+        auto tok = lexer.NextToken();
         EXPECT_EQ(tok.type, tests[i].expectedType)
             << "tests[" << i << "] - tokentype wrong. "
             << "expected=" << Token::toString(tests[i].expectedType)

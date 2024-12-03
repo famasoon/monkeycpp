@@ -582,25 +582,26 @@ std::unique_ptr<AST::Expression> Parser::parseIfExpression()
     );
 }
 
-std::unique_ptr<AST::Expression> Parser::parseWhileExpression()
-{
-    Token::Token whileToken = curToken;  // 'while'トークンを保存
-    
-    if (!expectPeek(Token::TokenType::LPAREN)) return nullptr;
-    
-    nextToken();
-    auto condition = parseExpression(Precedence::LOWEST);
-    
-    if (!expectPeek(Token::TokenType::RPAREN)) return nullptr;
-    if (!expectPeek(Token::TokenType::LBRACE)) return nullptr;
-    
-    auto body = parseBlockStatement();
-    
-    return std::make_unique<AST::WhileExpression>(
-        whileToken,
-        std::move(condition), 
-        std::move(body)
-    );
+std::unique_ptr<AST::Expression> Parser::parseWhileExpression() {
+    auto whileExpr = std::make_unique<AST::WhileExpression>(curToken);
+
+    if (!expectPeek(Token::TokenType::LPAREN)) {
+        return nullptr;
+    }
+
+    nextToken(); // skip '('
+    whileExpr->condition = parseExpression(Precedence::LOWEST);
+
+    if (!expectPeek(Token::TokenType::RPAREN)) {
+        return nullptr;
+    }
+
+    if (!expectPeek(Token::TokenType::LBRACE)) {
+        return nullptr;
+    }
+
+    whileExpr->body = parseBlockStatement();
+    return whileExpr;
 }
 
 } // namespace Parser

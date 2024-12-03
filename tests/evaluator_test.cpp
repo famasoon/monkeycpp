@@ -260,3 +260,21 @@ TEST(EvaluatorTest, TestArrayErrorHandling)
         EXPECT_EQ(errorObj->message(), tt.expectedError);
     }
 }
+
+TEST(EvaluatorTest, TestWhileExpression) {
+    struct Test {
+        std::string input;
+        int64_t expected;
+    };
+
+    std::vector<Test> tests = {
+        {"let x = 0; while (x < 5) { let x = x + 1; } x;", 5},
+        {"let x = 0; while (false) { let x = x + 1; } x;", 0},
+        {"let x = 0; while (x < 3) { let x = x + 1; } x;", 3},
+    };
+
+    for (const auto& tt : tests) {
+        auto evaluated = testEval(tt.input);
+        testIntegerObject(evaluated, tt.expected);
+    }
+}

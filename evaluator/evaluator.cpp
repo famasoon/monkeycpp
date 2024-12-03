@@ -372,6 +372,14 @@ ObjectPtr Evaluator::eval(const AST::Node* node)
             return evalBlockStatement(blockStmt);
         }
 
+        // while式の評価
+        if (auto whileExpr = dynamic_cast<const AST::WhileExpression*>(node))
+        {
+            std::cout << "\n=== Evaluating While Expression ===" << std::endl;
+            std::cout << "Debug: Condition: " << whileExpr->condition->String() << std::endl;
+            return evalWhileExpression(whileExpr);
+        }
+
         std::cout << "\nDebug: No matching evaluation case found" << std::endl;
         std::cout << "Debug: Node string: " << node->String() << std::endl;
         return std::make_shared<Null>();
@@ -1096,6 +1104,35 @@ bool Evaluator::isTruthy(const ObjectPtr& obj)
 
     std::cout << "Debug: Object is truthy by default" << std::endl;
     return true;
+}
+
+ObjectPtr Evaluator::evalWhileExpression(const AST::WhileExpression* whileExpr) {
+    std::cout << "\n=== Evaluating While Expression ===" << std::endl;
+    
+    if (!whileExpr->condition || !whileExpr->body) {
+        std::cout << "Debug: Invalid while expression" << std::endl;
+        return newError("invalid while expression");
+    }
+
+    ObjectPtr result = std::make_shared<Null>();
+    while (true) {
+        auto condition = eval(whileExpr->condition.get());
+        if (isError(condition)) return condition;
+
+        if (!isTruthy(condition)) {
+            break;
+        }
+
+        result = eval(whileExpr->body.get());
+        if (isError(result)) return result;
+
+        // return文が見つかった場合は即座に返す
+        if (result && result->type() == ObjectType::RETURN_VALUE) {
+            return result;
+        }
+    }
+
+    return result;
 }
 
 } // namespace monkey

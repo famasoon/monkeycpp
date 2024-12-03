@@ -97,6 +97,7 @@ class Token
     static const std::string RETURN;
     static const std::string LBRACKET;
     static const std::string RBRACKET;
+    static const std::string WHILE;
 };
 
 } // namespace Token
