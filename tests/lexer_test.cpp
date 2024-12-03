@@ -133,3 +133,56 @@ TEST(LexerTest, TestWhileLoop)
             << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
     }
 }
+
+TEST(LexerTest, TestForLoop)
+{
+    std::string input = R"(
+        for (let i = 0; i < 5; let i = i + 1) {
+            let x = i;
+        }
+    )";
+
+    std::vector<TestCase> tests = {
+        {Token::TokenType::FOR, "for"},
+        {Token::TokenType::LPAREN, "("},
+        {Token::TokenType::LET, "let"},
+        {Token::TokenType::IDENT, "i"},
+        {Token::TokenType::ASSIGN, "="},
+        {Token::TokenType::INT, "0"},
+        {Token::TokenType::SEMICOLON, ";"},
+        {Token::TokenType::IDENT, "i"},
+        {Token::TokenType::LT, "<"},
+        {Token::TokenType::INT, "5"},
+        {Token::TokenType::SEMICOLON, ";"},
+        {Token::TokenType::LET, "let"},
+        {Token::TokenType::IDENT, "i"},
+        {Token::TokenType::ASSIGN, "="},
+        {Token::TokenType::IDENT, "i"},
+        {Token::TokenType::PLUS, "+"},
+        {Token::TokenType::INT, "1"},
+        {Token::TokenType::RPAREN, ")"},
+        {Token::TokenType::LBRACE, "{"},
+        {Token::TokenType::LET, "let"},
+        {Token::TokenType::IDENT, "x"},
+        {Token::TokenType::ASSIGN, "="},
+        {Token::TokenType::IDENT, "i"},
+        {Token::TokenType::SEMICOLON, ";"},
+        {Token::TokenType::RBRACE, "}"},
+        {Token::TokenType::EOF_, ""},
+    };
+
+    Lexer::Lexer lexer(input);
+
+    for (size_t i = 0; i < tests.size(); i++)
+    {
+        auto tok = lexer.NextToken();
+        EXPECT_EQ(tok.type, tests[i].expectedType)
+            << "tests[" << i << "] - tokentype wrong. "
+            << "expected=" << Token::toString(tests[i].expectedType)
+            << ", got=" << Token::toString(tok.type);
+
+        EXPECT_EQ(tok.literal, tests[i].expectedLiteral)
+            << "tests[" << i << "] - literal wrong. "
+            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
+    }
+}

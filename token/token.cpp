@@ -69,6 +69,8 @@ std::string toString(TokenType type)
         return "RBRACKET";
     case TokenType::WHILE:
         return "WHILE";
+    case TokenType::FOR:
+        return "FOR";
     default:
         return "UNKNOWN";
     }
@@ -105,6 +107,7 @@ const std::string Token::RETURN = "RETURN";
 const std::string Token::LBRACKET = "[";
 const std::string Token::RBRACKET = "]";
 const std::string Token::WHILE = "WHILE";
+const std::string Token::FOR = "FOR";
 
 Token::Token(TokenType type, std::string literal) : type(type), literal(std::move(literal))
 {

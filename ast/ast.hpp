@@ -335,4 +335,42 @@ public:
     const BlockStatement* getBody() const { return body.get(); }
 };
 
+class ForExpression : public Expression {
+private:
+    Token::Token token;  // 'for'トークン
+
+public:
+    std::unique_ptr<Expression> init;      // 初期化式
+    std::unique_ptr<Expression> condition; // 条件式
+    std::unique_ptr<Expression> update;    // 更新式
+    std::unique_ptr<BlockStatement> body;  // 本体
+
+    explicit ForExpression(Token::Token tok);
+    ForExpression(Token::Token tok,
+                 std::unique_ptr<Expression> init,
+                 std::unique_ptr<Expression> cond,
+                 std::unique_ptr<Expression> update,
+                 std::unique_ptr<BlockStatement> b);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    Expression* clone() const override;
+};
+
+class LetExpression : public Expression {
+private:
+    Token::Token token;
+    std::unique_ptr<Identifier> name;
+    std::unique_ptr<Expression> value;
+
+public:
+    LetExpression(Token::Token tok,
+                  std::unique_ptr<Identifier> name,
+                  std::unique_ptr<Expression> value);
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    Expression* clone() const override;
+};
+
 } // namespace AST

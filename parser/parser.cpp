@@ -39,6 +39,8 @@ void Parser::initParseFns()
     registerPrefix(Token::TokenType::LBRACKET, [this] { return parseArrayLiteral(); });
     registerPrefix(Token::TokenType::IF, [this] { return parseIfExpression(); });
     registerPrefix(Token::TokenType::WHILE, [this] { return parseWhileExpression(); });
+    registerPrefix(Token::TokenType::FOR, [this] { return parseForExpression(); });
+    registerPrefix(Token::TokenType::LET, [this] { return parseLetExpression(); });
 
     const std::vector<Token::TokenType> infixOps = {
         Token::TokenType::PLUS,     Token::TokenType::MINUS, Token::TokenType::SLASH,
@@ -277,6 +279,17 @@ std::unique_ptr<AST::Expression> Parser::parseInfixExpression(std::unique_ptr<AS
     return expression;
 }
 
+std::unique_ptr<AST::Expression> Parser::parseLetExpression() {
+    auto stmt = parseLetStatement();
+    if (!stmt) return nullptr;
+    
+    return std::make_unique<AST::LetExpression>(
+        stmt->token,
+        std::unique_ptr<AST::Identifier>(stmt->name.release()),
+        std::unique_ptr<AST::Expression>(stmt->value.release())
+    );
+}
+
 std::unique_ptr<AST::LetStatement> Parser::parseLetStatement()
 {
     trace("START parseLetStatement");
@@ -286,41 +299,34 @@ std::unique_ptr<AST::LetStatement> Parser::parseLetStatement()
 
     if (!expectPeek(Token::TokenType::IDENT))
     {
-        trace("Failed: expected identifier");
         decreaseIndent();
         return nullptr;
     }
-    trace("Found identifier: " + curToken.literal);
 
     stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.literal);
 
     if (!expectPeek(Token::TokenType::ASSIGN))
     {
-        trace("Failed: expected assign operator");
         decreaseIndent();
         return nullptr;
     }
+
     nextToken();
 
     stmt->value = parseExpression(Precedence::LOWEST);
     if (!stmt->value)
     {
-        trace("Failed: could not parse expression");
         decreaseIndent();
         return nullptr;
     }
 
-    if (!peekTokenIs(Token::TokenType::SEMICOLON))
+    if (peekTokenIs(Token::TokenType::SEMICOLON))
     {
-        registerError("Expected semicolon after let statement");
-        trace("Failed: expected semicolon");
-        decreaseIndent();
-        return nullptr;
+        nextToken();
     }
-    nextToken();
 
     decreaseIndent();
-    trace("END parseLetStatement: success");
+    trace("END parseLetStatement");
     return stmt;
 }
 
@@ -602,6 +608,50 @@ std::unique_ptr<AST::Expression> Parser::parseWhileExpression() {
 
     whileExpr->body = parseBlockStatement();
     return whileExpr;
+}
+
+std::unique_ptr<AST::Expression> Parser::parseForExpression() {
+    auto forExpr = std::make_unique<AST::ForExpression>(curToken);
+
+    if (!expectPeek(Token::TokenType::LPAREN)) return nullptr;
+
+    nextToken(); // skip '('
+    if (curTokenIs(Token::TokenType::LET)) {
+        auto letStmt = parseLetStatement();
+        if (!letStmt) return nullptr;
+        forExpr->init = std::make_unique<AST::LetExpression>(
+            letStmt->token,
+            std::unique_ptr<AST::Identifier>(letStmt->name.release()),
+            std::unique_ptr<AST::Expression>(letStmt->value.release())
+        );
+    } else {
+        forExpr->init = parseExpression(Precedence::LOWEST);
+        if (!expectPeek(Token::TokenType::SEMICOLON)) return nullptr;
+    }
+
+    nextToken(); // skip ';'
+    forExpr->condition = parseExpression(Precedence::LOWEST);
+
+    if (!expectPeek(Token::TokenType::SEMICOLON)) return nullptr;
+
+    nextToken(); // skip ';'
+    if (curTokenIs(Token::TokenType::LET)) {
+        auto letStmt = parseLetStatement();
+        if (!letStmt) return nullptr;
+        forExpr->update = std::make_unique<AST::LetExpression>(
+            letStmt->token,
+            std::unique_ptr<AST::Identifier>(letStmt->name.release()),
+            std::unique_ptr<AST::Expression>(letStmt->value.release())
+        );
+    } else {
+        forExpr->update = parseExpression(Precedence::LOWEST);
+    }
+
+    if (!expectPeek(Token::TokenType::RPAREN)) return nullptr;
+    if (!expectPeek(Token::TokenType::LBRACE)) return nullptr;
+
+    forExpr->body = parseBlockStatement();
+    return forExpr;
 }
 
 } // namespace Parser

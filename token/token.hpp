@@ -49,6 +49,7 @@ enum class TokenType
     LBRACKET, // [
     RBRACKET, // ]
     WHILE,
+    FOR,
 };
 
 // TokenTypeを文字列に変換する関数
@@ -98,6 +99,7 @@ class Token
     static const std::string LBRACKET;
     static const std::string RBRACKET;
     static const std::string WHILE;
+    static const std::string FOR;
 };
 
 } // namespace Token

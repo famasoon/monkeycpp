@@ -527,3 +527,38 @@ TEST_F(ParserTest, TestWhileExpression)
     ASSERT_NE(whileExpr->body, nullptr);
     ASSERT_EQ(whileExpr->body->statements.size(), 1);
 }
+
+TEST_F(ParserTest, TestForExpression)
+{
+    std::string input = R"(
+        for (let i = 0; i < 5; let i = i + 1) {
+            let x = i;
+        }
+    )";
+
+    auto [program, parser_owner, parser] = ParseInput(input);
+    ASSERT_NE(program.get(), nullptr);
+    
+    // エラーがある場合は内容を出力
+    if (!parser->Errors().empty()) {
+        std::cout << "Parser errors:" << std::endl;
+        for (const auto& err : parser->Errors()) {
+            std::cout << "\t" << err << std::endl;
+        }
+    }
+    ASSERT_TRUE(parser->Errors().empty());
+
+    ASSERT_EQ(program->statements.size(), 1);
+
+    auto stmt = dynamic_cast<AST::ExpressionStatement*>(program->statements[0].get());
+    ASSERT_NE(stmt, nullptr);
+
+    auto forExpr = dynamic_cast<AST::ForExpression*>(stmt->expression.get());
+    ASSERT_NE(forExpr, nullptr);
+
+    // 初期化式、条件式、更新式、本体のテスト
+    ASSERT_NE(forExpr->init, nullptr);
+    ASSERT_NE(forExpr->condition, nullptr);
+    ASSERT_NE(forExpr->update, nullptr);
+    ASSERT_NE(forExpr->body, nullptr);
+}

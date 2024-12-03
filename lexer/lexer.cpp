@@ -12,7 +12,8 @@ const std::unordered_map<std::string, Token::TokenType> keywords = {
     {"fn", Token::TokenType::FUNCTION},  {"let", Token::TokenType::LET},
     {"true", Token::TokenType::TRUE},    {"false", Token::TokenType::FALSE},
     {"if", Token::TokenType::IF},        {"else", Token::TokenType::ELSE},
-    {"return", Token::TokenType::RETURN}, {"while", Token::TokenType::WHILE}};
+    {"return", Token::TokenType::RETURN}, {"while", Token::TokenType::WHILE},
+    {"for", Token::TokenType::FOR}};
 }
 
 Lexer::Lexer(std::string input) : input(std::move(input)), position(0), readPosition(0), ch(0)

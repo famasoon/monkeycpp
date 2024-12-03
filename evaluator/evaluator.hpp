@@ -54,6 +54,7 @@ class Evaluator
     ObjectPtr evalHashLiteral(const AST::HashLiteral* hash);
     ObjectPtr evalHashIndexExpression(const ObjectPtr& hash, const ObjectPtr& index);
     ObjectPtr evalWhileExpression(const AST::WhileExpression* whileExpr);
+    ObjectPtr evalForExpression(const AST::ForExpression* forExpr);
 };
 
 } // namespace monkey

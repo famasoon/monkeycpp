@@ -43,7 +43,7 @@ class Parser
     std::unordered_map<Token::TokenType, PrefixParseFn> prefixParseFns;
     std::unordered_map<Token::TokenType, InfixParseFn> infixParseFns;
 
-    // デバッグ関連
+    // デバッグ関
     bool debugMode = false;
     std::ostream *debugOut = &std::cout;
     int indentLevel = 0;
@@ -119,13 +119,15 @@ class Parser
     std::unique_ptr<AST::Expression> parseGroupedExpression();
     std::unique_ptr<AST::Expression> parseStringLiteral();
 
-    // パース関数
+    // パース関
     std::unique_ptr<AST::Expression> parseArrayLiteral();
     std::unique_ptr<AST::Expression> parseIndexExpression(std::unique_ptr<AST::Expression> left);
 
     // 新しい関数の宣言を追加
     std::unique_ptr<AST::Expression> parseIfExpression();
     std::unique_ptr<AST::Expression> parseWhileExpression();
+    std::unique_ptr<AST::Expression> parseForExpression();
+    std::unique_ptr<AST::Expression> parseLetExpression();
 };
 
 } // namespace Parser

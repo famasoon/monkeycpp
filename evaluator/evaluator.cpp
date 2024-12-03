@@ -380,6 +380,13 @@ ObjectPtr Evaluator::eval(const AST::Node* node)
             return evalWhileExpression(whileExpr);
         }
 
+        // for式の評価
+        if (auto forExpr = dynamic_cast<const AST::ForExpression*>(node))
+        {
+            std::cout << "\n=== Evaluating For Expression ===" << std::endl;
+            return evalForExpression(forExpr);
+        }
+
         std::cout << "\nDebug: No matching evaluation case found" << std::endl;
         std::cout << "Debug: Node string: " << node->String() << std::endl;
         return std::make_shared<Null>();
@@ -1130,6 +1137,45 @@ ObjectPtr Evaluator::evalWhileExpression(const AST::WhileExpression* whileExpr) 
         if (result && result->type() == ObjectType::RETURN_VALUE) {
             return result;
         }
+    }
+
+    return result;
+}
+
+ObjectPtr Evaluator::evalForExpression(const AST::ForExpression* forExpr) {
+    std::cout << "\n=== Evaluating For Expression ===" << std::endl;
+    
+    if (!forExpr->init || !forExpr->condition || !forExpr->update || !forExpr->body) {
+        std::cout << "Debug: Invalid for expression" << std::endl;
+        return newError("invalid for expression");
+    }
+
+    // 初期化式を評価
+    auto init = eval(forExpr->init.get());
+    if (isError(init)) return init;
+
+    ObjectPtr result = std::make_shared<Null>();
+    while (true) {
+        // 条件式を評価
+        auto condition = eval(forExpr->condition.get());
+        if (isError(condition)) return condition;
+
+        if (!isTruthy(condition)) {
+            break;
+        }
+
+        // 本体を評価
+        result = eval(forExpr->body.get());
+        if (isError(result)) return result;
+
+        // return文が見つかった場合は即座に返す
+        if (result && result->type() == ObjectType::RETURN_VALUE) {
+            return result;
+        }
+
+        // 更新式を評価
+        auto update = eval(forExpr->update.get());
+        if (isError(update)) return update;
     }
 
     return result;

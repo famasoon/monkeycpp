@@ -672,4 +672,73 @@ Expression* WhileExpression::clone() const {
         body ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(body->clone())) : nullptr
     );
 }
+
+ForExpression::ForExpression(Token::Token tok)
+    : token(std::move(tok)) {}
+
+ForExpression::ForExpression(Token::Token tok,
+                           std::unique_ptr<Expression> init,
+                           std::unique_ptr<Expression> cond,
+                           std::unique_ptr<Expression> update,
+                           std::unique_ptr<BlockStatement> b)
+    : token(std::move(tok))
+    , init(std::move(init))
+    , condition(std::move(cond))
+    , update(std::move(update))
+    , body(std::move(b)) {}
+
+void ForExpression::expressionNode() {}
+
+std::string ForExpression::TokenLiteral() const {
+    return token.literal;
+}
+
+std::string ForExpression::String() const {
+    std::string out = "for (";
+    if (init) out += init->String();
+    out += "; ";
+    if (condition) out += condition->String();
+    out += "; ";
+    if (update) out += update->String();
+    out += ") ";
+    if (body) out += body->String();
+    return out;
+}
+
+Expression* ForExpression::clone() const {
+    return new ForExpression(
+        token,
+        init ? std::unique_ptr<Expression>(init->clone()) : nullptr,
+        condition ? std::unique_ptr<Expression>(condition->clone()) : nullptr,
+        update ? std::unique_ptr<Expression>(update->clone()) : nullptr,
+        body ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(body->clone())) : nullptr
+    );
+}
+
+LetExpression::LetExpression(Token::Token tok,
+                           std::unique_ptr<Identifier> name,
+                           std::unique_ptr<Expression> value)
+    : token(std::move(tok))
+    , name(std::move(name))
+    , value(std::move(value)) {}
+
+void LetExpression::expressionNode() {}
+
+std::string LetExpression::TokenLiteral() const {
+    return token.literal;
+}
+
+std::string LetExpression::String() const {
+    std::string out = "let " + name->String() + " = ";
+    if (value) out += value->String();
+    return out;
+}
+
+Expression* LetExpression::clone() const {
+    return new LetExpression(
+        token,
+        std::unique_ptr<Identifier>(static_cast<Identifier*>(name->clone())),
+        value ? std::unique_ptr<Expression>(value->clone()) : nullptr
+    );
+}
 } // namespace AST
