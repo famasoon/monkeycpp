@@ -26,7 +26,6 @@ void Compiler::initializeOptimizations(unsigned level)
     llvm::LoopAnalysisManager loopAnalysisManager;
     llvm::FunctionAnalysisManager functionAnalysisManager;
     llvm::CGSCCAnalysisManager cGSCCAnalysisManager;
-    llvm::ModuleAnalysisManager moduleAnalysisManager;
 
     // 分析マネージャーの登録
     passBuilder.registerModuleAnalyses(moduleAnalysisManager);
@@ -39,23 +38,13 @@ void Compiler::initializeOptimizations(unsigned level)
     // 最適化レベルに応じたパスの設定
     switch (level)
     {
-        case 0: // -O0
+        case 0:
             passManager = passBuilder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0);
-            break;
-        case 1: // -O1
-            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O1);
-            break;
-        case 2: // -O2
-            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-            break;
-        case 3: // -O3
-            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
             break;
         default:
             passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
     }
 
-    // 関数レベルの最適化パスの設定
     functionPassManager = passBuilder.buildFunctionSimplificationPipeline(
         llvm::OptimizationLevel::O2, llvm::ThinOrFullLTOPhase::None);
 }
@@ -102,6 +91,26 @@ llvm::Value *Compiler::compileExpression(const AST::Expression *expr)
     {
         return compileInfixExpression(infixExpr);
     }
+    if (auto prefixExpr = dynamic_cast<const AST::PrefixExpression *>(expr))
+    {
+        return compilePrefixExpression(prefixExpr);
+    }
+    if (auto booleanLiteral = dynamic_cast<const AST::BooleanLiteral *>(expr))
+    {
+        return compileBooleanLiteral(booleanLiteral);
+    }
+    if (auto identifier = dynamic_cast<const AST::Identifier *>(expr))
+    {
+        return compileIdentifier(identifier);
+    }
+    if (auto functionLiteral = dynamic_cast<const AST::FunctionLiteral *>(expr))
+    {
+        return compileFunctionLiteral(functionLiteral);
+    }
+    if (auto callExpr = dynamic_cast<const AST::CallExpression *>(expr))
+    {
+        return compileCallExpression(callExpr);
+    }
     // 他の式型のハンドリングを追加
     return nullptr;
 }
@@ -137,6 +146,113 @@ llvm::Value *Compiler::compileInfixExpression(const AST::InfixExpression *infix)
     }
 
     return nullptr;
+}
+
+llvm::Value* Compiler::compilePrefixExpression(const AST::PrefixExpression* prefix)
+{
+    auto operand = compileExpression(prefix->right.get());
+    if (!operand) return nullptr;
+
+    if (prefix->op == "!")
+    {
+        return builder->CreateNot(operand, "nottmp");
+    }
+    else if (prefix->op == "-")
+    {
+        return builder->CreateNeg(operand, "negtmp");
+    }
+    return nullptr;
+}
+
+llvm::Value* Compiler::compileBooleanLiteral(const AST::BooleanLiteral* boolean)
+{
+    return llvm::ConstantInt::get(*context, llvm::APInt(1, boolean->value ? 1 : 0, false));
+}
+
+llvm::Value* Compiler::compileIdentifier(const AST::Identifier* ident)
+{
+    auto it = namedValues.find(ident->value);
+    if (it != namedValues.end())
+    {
+        return builder->CreateLoad(llvm::Type::getInt64Ty(*context), it->second, ident->value.c_str());
+    }
+    return nullptr;
+}
+
+llvm::Function* Compiler::createFunction(const std::string& name, 
+                                       const std::vector<std::string>& argNames)
+{
+    std::vector<llvm::Type*> ints(argNames.size(), 
+                                 llvm::Type::getInt64Ty(*context));
+    
+    llvm::FunctionType* ft = llvm::FunctionType::get(
+        llvm::Type::getInt64Ty(*context), ints, false);
+    
+    llvm::Function* f = llvm::Function::Create(
+        ft, llvm::Function::ExternalLinkage, name, module.get());
+    
+    unsigned idx = 0;
+    for (auto& arg : f->args())
+    {
+        arg.setName(argNames[idx++]);
+    }
+    
+    return f;
+}
+
+llvm::Value* Compiler::compileFunctionLiteral(const AST::FunctionLiteral* func)
+{
+    std::vector<std::string> argNames;
+    for (const auto& param : func->parameters)
+    {
+        argNames.push_back(param->value);
+    }
+    
+    std::string funcName = "anonymous_func_" + std::to_string(
+        reinterpret_cast<std::uintptr_t>(func));
+    llvm::Function* function = createFunction(funcName, argNames);
+    
+    // 関数本体のコンパイル
+    llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "entry", function);
+    builder->SetInsertPoint(bb);
+    
+    // 引数の割り当て
+    namedValues.clear();
+    for (auto& arg : function->args())
+    {
+        llvm::AllocaInst* alloca = createEntryBlockAlloca(
+            function, std::string(arg.getName()));
+        builder->CreateStore(&arg, alloca);
+        namedValues[std::string(arg.getName())] = alloca;
+    }
+    
+    // 関数本体のコンパイル
+    if (func->body)
+    {
+        for (const auto& stmt : func->body->statements)
+        {
+            compileStatement(stmt.get());
+        }
+    }
+    
+    return function;
+}
+
+llvm::AllocaInst* Compiler::createEntryBlockAlloca(llvm::Function* function,
+                                                  const std::string& varName)
+{
+    llvm::IRBuilder<> tmpB(&function->getEntryBlock(),
+                          function->getEntryBlock().begin());
+    return tmpB.CreateAlloca(llvm::Type::getInt64Ty(*context),
+                           nullptr, varName.c_str());
+}
+
+std::string Compiler::getIR() const
+{
+    std::string ir;
+    llvm::raw_string_ostream os(ir);
+    module->print(os, nullptr);
+    return ir;
 }
 
 } // namespace JIT

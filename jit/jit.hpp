@@ -6,6 +6,7 @@
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <memory>
+#include <unordered_map>
 
 namespace JIT
 {
@@ -19,28 +20,48 @@ class Compiler
     llvm::ModulePassManager passManager;
     llvm::FunctionPassManager functionPassManager;
     llvm::ModuleAnalysisManager moduleAnalysisManager;
+    
+    // シンボルテーブル
+    std::unordered_map<std::string, llvm::Value*> namedValues;
+    // 現在のコンパイル中の関数
+    llvm::Function* currentFunction;
 
   public:
     Compiler();
     ~Compiler() = default;
 
-    // ASTからLLVM IRを生成
-    void compile(const AST::Program &program);
-
-    // 最適化レベルを設定
+    void compile(const AST::Program& program);
     void setOptimizationLevel(unsigned level);
+    
+    // IRの文字列表現を取得
+    std::string getIR() const;
 
   private:
-    // 最適化の初期化
     void initializeOptimizations(unsigned level);
-    // モジュールレベルの最適化を実行
     void runOptimizations();
 
-    // 各種ASTノードのコンパイル
-    llvm::Value *compileExpression(const AST::Expression *expr);
-    void compileStatement(const AST::Statement *stmt);
-    llvm::Value *compileIntegerLiteral(const AST::IntegerLiteral *literal);
-    llvm::Value *compileInfixExpression(const AST::InfixExpression *infix);
+    llvm::Value* compileExpression(const AST::Expression* expr);
+    void compileStatement(const AST::Statement* stmt);
+    
+    // 新しいコンパイルメソッド
+    llvm::Value* compileIntegerLiteral(const AST::IntegerLiteral* literal);
+    llvm::Value* compileInfixExpression(const AST::InfixExpression* infix);
+    llvm::Value* compilePrefixExpression(const AST::PrefixExpression* prefix);
+    llvm::Value* compileIdentifier(const AST::Identifier* ident);
+    llvm::Value* compileFunctionLiteral(const AST::FunctionLiteral* func);
+    llvm::Value* compileCallExpression(const AST::CallExpression* call);
+    llvm::Value* compileBooleanLiteral(const AST::BooleanLiteral* boolean);
+    
+    // 文のコンパイル
+    void compileLetStatement(const AST::LetStatement* let);
+    void compileReturnStatement(const AST::ReturnStatement* ret);
+    void compileExpressionStatement(const AST::ExpressionStatement* expr);
+    
+    // ユーティリティ関数
+    llvm::Function* createFunction(const std::string& name, 
+                                 const std::vector<std::string>& argNames);
+    llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function,
+                                           const std::string& varName);
 };
 
 } // namespace JIT
