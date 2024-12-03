@@ -122,6 +122,10 @@ class Parser
     // パース関数
     std::unique_ptr<AST::Expression> parseArrayLiteral();
     std::unique_ptr<AST::Expression> parseIndexExpression(std::unique_ptr<AST::Expression> left);
+
+    // 新しい関数の宣言を追加
+    std::unique_ptr<AST::Expression> parseIfExpression();
+    std::unique_ptr<AST::Expression> parseWhileExpression();
 };
 
 } // namespace Parser

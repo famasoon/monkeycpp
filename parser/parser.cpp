@@ -37,6 +37,8 @@ void Parser::initParseFns()
     registerPrefix(Token::TokenType::LPAREN, [this] { return parseGroupedExpression(); });
     registerPrefix(Token::TokenType::STRING, [this] { return parseStringLiteral(); });
     registerPrefix(Token::TokenType::LBRACKET, [this] { return parseArrayLiteral(); });
+    registerPrefix(Token::TokenType::IF, [this] { return parseIfExpression(); });
+    registerPrefix(Token::TokenType::WHILE, [this] { return parseWhileExpression(); });
 
     const std::vector<Token::TokenType> infixOps = {
         Token::TokenType::PLUS,     Token::TokenType::MINUS, Token::TokenType::SLASH,
@@ -549,6 +551,56 @@ std::unique_ptr<AST::Expression> Parser::parseIndexExpression(std::unique_ptr<AS
     decreaseIndent();
     trace("END parseIndexExpression");
     return expr;
+}
+
+std::unique_ptr<AST::Expression> Parser::parseIfExpression()
+{
+    Token::Token ifToken = curToken;  // 'if'トークンを保存
+    
+    if (!expectPeek(Token::TokenType::LPAREN)) return nullptr;
+    
+    nextToken(); // '('を消費
+    auto condition = parseExpression(Precedence::LOWEST);
+    
+    if (!expectPeek(Token::TokenType::RPAREN)) return nullptr;
+    if (!expectPeek(Token::TokenType::LBRACE)) return nullptr;
+    
+    auto consequence = parseBlockStatement();
+    
+    std::unique_ptr<AST::BlockStatement> alternative;
+    if (peekTokenIs(Token::TokenType::ELSE)) {
+        nextToken();
+        if (!expectPeek(Token::TokenType::LBRACE)) return nullptr;
+        alternative = parseBlockStatement();
+    }
+    
+    return std::make_unique<AST::IfExpression>(
+        ifToken,
+        std::move(condition), 
+        std::move(consequence), 
+        std::move(alternative)
+    );
+}
+
+std::unique_ptr<AST::Expression> Parser::parseWhileExpression()
+{
+    Token::Token whileToken = curToken;  // 'while'トークンを保存
+    
+    if (!expectPeek(Token::TokenType::LPAREN)) return nullptr;
+    
+    nextToken();
+    auto condition = parseExpression(Precedence::LOWEST);
+    
+    if (!expectPeek(Token::TokenType::RPAREN)) return nullptr;
+    if (!expectPeek(Token::TokenType::LBRACE)) return nullptr;
+    
+    auto body = parseBlockStatement();
+    
+    return std::make_unique<AST::WhileExpression>(
+        whileToken,
+        std::move(condition), 
+        std::move(body)
+    );
 }
 
 } // namespace Parser

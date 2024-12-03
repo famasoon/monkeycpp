@@ -48,6 +48,7 @@ enum class TokenType
 
     LBRACKET, // [
     RBRACKET, // ]
+    WHILE,
 };
 
 // TokenTypeを文字列に変換する関数

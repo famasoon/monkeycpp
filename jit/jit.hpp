@@ -27,6 +27,11 @@ class Compiler
     // 現在のコンパイル中の関数
     llvm::Function* currentFunction;
 
+    // 新しいメソッドの宣言を追加
+    llvm::Value* compileIfExpression(const AST::IfExpression* ifExpr);
+    llvm::Value* compileWhileExpression(const AST::WhileExpression* whileExpr);
+    llvm::Value* compileBlockStatement(const AST::BlockStatement* block);
+
   public:
     Compiler();
     ~Compiler() = default;

@@ -115,6 +115,14 @@ llvm::Value* Compiler::compileStatement(const AST::Statement* stmt)
     {
         compileLetStatement(letStmt);
     }
+    else if (auto ifStmt = dynamic_cast<const AST::IfExpression*>(stmt))
+    {
+        return compileIfExpression(ifStmt);
+    }
+    else if (auto whileStmt = dynamic_cast<const AST::WhileExpression*>(stmt))
+    {
+        return compileWhileExpression(whileStmt);
+    }
     return nullptr;
 }
 
@@ -304,7 +312,7 @@ llvm::Value* Compiler::compileFunctionLiteral(const AST::FunctionLiteral* func)
         reinterpret_cast<std::uintptr_t>(func));
     llvm::Function* function = createFunction(funcName, argNames);
     
-    // 現在のビルダーの状態を保存
+    // 現在のビル���ーの状態を保存
     auto prevBlock = builder->GetInsertBlock();
     auto prevFunc = builder->GetInsertBlock()->getParent();
 
@@ -419,6 +427,95 @@ void Compiler::compileLetStatement(const AST::LetStatement* let)
     // 値の格納
     builder->CreateStore(value, alloca);
     namedValues[let->name->value] = alloca;
+}
+
+llvm::Value* Compiler::compileBlockStatement(const AST::BlockStatement* block)
+{
+    llvm::Value* lastValue = nullptr;
+    for (const auto& stmt : block->statements)
+    {
+        lastValue = compileStatement(stmt.get());
+        if (!lastValue) return nullptr;
+    }
+    return lastValue;
+}
+
+llvm::Value* Compiler::compileIfExpression(const AST::IfExpression* ifExpr)
+{
+    // 条件式のコンパイル
+    auto condition = compileExpression(ifExpr->getCondition());
+    if (!condition) return nullptr;
+
+    // 現在の関数を取得
+    llvm::Function* function = builder->GetInsertBlock()->getParent();
+
+    // 各ブロックの作成（すべてのブロックを関数に直接追加）
+    llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(*context, "then", function);
+    llvm::BasicBlock* elseBB = ifExpr->getAlternative() 
+        ? llvm::BasicBlock::Create(*context, "else", function) 
+        : nullptr;
+    llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(*context, "ifcont", function);
+
+    // 条件分岐の生成
+    builder->CreateCondBr(condition, thenBB, elseBB ? elseBB : mergeBB);
+
+    // then部分のコンパイル
+    builder->SetInsertPoint(thenBB);
+    auto thenVal = compileBlockStatement(ifExpr->getConsequence());
+    if (!thenVal) return nullptr;
+    builder->CreateBr(mergeBB);
+
+    // else部分のコンパイル（存在する場合）
+    llvm::Value* elseVal = nullptr;
+    if (elseBB) {
+        builder->SetInsertPoint(elseBB);
+        elseVal = compileBlockStatement(ifExpr->getAlternative());
+        if (!elseVal) return nullptr;
+        builder->CreateBr(mergeBB);
+    }
+
+    // マージブロックの処理
+    builder->SetInsertPoint(mergeBB);
+    
+    if (elseVal) {
+        llvm::PHINode* phi = builder->CreatePHI(thenVal->getType(), 2, "iftmp");
+        phi->addIncoming(thenVal, thenBB);
+        phi->addIncoming(elseVal, elseBB);
+        return phi;
+    }
+    
+    return thenVal;
+}
+
+llvm::Value* Compiler::compileWhileExpression(const AST::WhileExpression* whileExpr)
+{
+    // 現在の関数を取得
+    llvm::Function* function = builder->GetInsertBlock()->getParent();
+
+    // ブロックの作成（すべてのブロックを関数に直接追加）
+    llvm::BasicBlock* condBB = llvm::BasicBlock::Create(*context, "cond", function);
+    llvm::BasicBlock* loopBB = llvm::BasicBlock::Create(*context, "loop", function);
+    llvm::BasicBlock* afterBB = llvm::BasicBlock::Create(*context, "afterloop", function);
+
+    // 条件ブロックにジャンプ
+    builder->CreateBr(condBB);
+
+    // 条件式のコンパイル
+    builder->SetInsertPoint(condBB);
+    auto condition = compileExpression(whileExpr->getCondition());
+    if (!condition) return nullptr;
+    builder->CreateCondBr(condition, loopBB, afterBB);
+
+    // ループ本体のコンパイル
+    builder->SetInsertPoint(loopBB);
+    auto bodyVal = compileBlockStatement(whileExpr->getBody());
+    if (!bodyVal) return nullptr;
+    builder->CreateBr(condBB);
+
+    // ループ後のブロック
+    builder->SetInsertPoint(afterBB);
+
+    return llvm::ConstantInt::get(*context, llvm::APInt(64, 0));
 }
 
 } // namespace JIT

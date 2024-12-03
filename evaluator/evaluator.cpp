@@ -175,255 +175,341 @@ std::string objectTypeToString(ObjectType type)
 }
 } // namespace
 
-ObjectPtr Evaluator::eval(const AST::Node *node)
+ObjectPtr Evaluator::eval(const AST::Node* node)
 {
-    if (!node)
-        return std::make_shared<Null>();
+    try {
+        std::cout << "\n=== Starting Evaluation ===" << std::endl;
+        std::cout << "Debug: Node type: " << typeid(*node).name() << std::endl;
+        std::cout << "Debug: Node string representation: " << node->String() << std::endl;
+        
+        if (!node) {
+            std::cout << "Debug: Node is null, returning Null object" << std::endl;
+            return std::make_shared<Null>();
+        }
 
-    // オブジェクトの割り当てを追跡
-    trackObject();
-
-    // しきい値を超えた場合、ガベージコレクションを実行
-    if (allocatedObjects > GC_THRESHOLD)
-    {
-        debugPrint("Running garbage collection...");
-        collectGarbage();
-        allocatedObjects = 0;
-    }
-
-    // リテラルの評価
-    if (auto *intLiteral = dynamic_cast<const AST::IntegerLiteral *>(node))
-    {
-        return evalIntegerLiteral(intLiteral);
-    }
-    if (auto *boolLiteral = dynamic_cast<const AST::BooleanLiteral *>(node))
-    {
-        return evalBooleanLiteral(boolLiteral);
-    }
-    if (auto *strLiteral = dynamic_cast<const AST::StringLiteral *>(node))
-    {
-        return evalStringLiteral(strLiteral);
-    }
-    if (auto *funcLiteral = dynamic_cast<const AST::FunctionLiteral *>(node))
-    {
-        return evalFunctionLiteral(funcLiteral);
-    }
-    if (auto *identifier = dynamic_cast<const AST::Identifier *>(node))
-    {
-        return evalIdentifier(identifier);
-    }
-
-    // 文の評価
-    if (auto *program = dynamic_cast<const AST::Program *>(node))
-    {
-        return evalProgram(program);
-    }
-    if (auto *blockStmt = dynamic_cast<const AST::BlockStatement *>(node))
-    {
-        return evalBlockStatement(blockStmt);
-    }
-    if (auto *letStmt = dynamic_cast<const AST::LetStatement *>(node))
-    {
-        return evalLetStatement(letStmt);
-    }
-    if (auto *returnStmt = dynamic_cast<const AST::ReturnStatement *>(node))
-    {
-        return evalReturnStatement(returnStmt);
-    }
-    if (auto *exprStmt = dynamic_cast<const AST::ExpressionStatement *>(node))
-    {
-        return evalExpressionStatement(exprStmt);
-    }
-
-    // 式の評価
-    if (auto *prefixExpr = dynamic_cast<const AST::PrefixExpression *>(node))
-    {
-        return evalPrefixExpression(prefixExpr);
-    }
-    if (auto *infixExpr = dynamic_cast<const AST::InfixExpression *>(node))
-    {
-        return evalInfixExpression(infixExpr);
-    }
-    if (auto *callExpr = dynamic_cast<const AST::CallExpression *>(node))
-    {
-        return evalCallExpression(callExpr);
-    }
-    if (auto arrayLiteral = dynamic_cast<const AST::ArrayLiteral *>(node))
-    {
-        return evalArrayLiteral(arrayLiteral);
-    }
-    if (auto indexExpr = dynamic_cast<const AST::IndexExpression *>(node))
-    {
-        return evalIndexExpression(indexExpr);
-    }
-    if (auto hashLiteral = dynamic_cast<const AST::HashLiteral *>(node))
-    {
-        return evalHashLiteral(hashLiteral);
-    }
-
-    return std::make_shared<Null>();
-}
-
-ObjectPtr Evaluator::evalProgram(const AST::Program *program)
-{
-    if (!program)
-        return std::make_shared<Null>();
-
-    ObjectPtr result;
-    for (const std::unique_ptr<AST::Statement> &stmt : program->statements)
-    {
-        if (!stmt)
-            continue;
-
-        result = eval(stmt.get());
-        if (isError(result))
+        // プログラムの評価
+        if (auto program = dynamic_cast<const AST::Program*>(node))
+        {
+            std::cout << "\nDebug: Found Program node with " << program->statements.size() << " statements" << std::endl;
+            auto result = evalProgram(program);
+            std::cout << "Debug: Program evaluation result: " << (result ? result->inspect() : "null") << std::endl;
             return result;
+        }
+
+        // 式文の評価
+        if (auto exprStmt = dynamic_cast<const AST::ExpressionStatement*>(node))
+        {
+            std::cout << "\nDebug: Found ExpressionStatement" << std::endl;
+            std::cout << "Debug: Expression: " << exprStmt->String() << std::endl;
+            auto result = eval(exprStmt->expression.get());
+            std::cout << "Debug: ExpressionStatement result: " << (result ? result->inspect() : "null") << std::endl;
+            std::cout << "Debug: Result type: " << (result ? objectTypeToString(result->type()) : "null") << std::endl;
+            return result;
+        }
+
+        // リテラルの評価
+        if (auto intLiteral = dynamic_cast<const AST::IntegerLiteral*>(node))
+        {
+            std::cout << "Debug: Found IntegerLiteral: " << intLiteral->value << std::endl;
+            return evalIntegerLiteral(intLiteral);
+        }
+        if (auto boolLiteral = dynamic_cast<const AST::BooleanLiteral*>(node))
+        {
+            std::cout << "Debug: Found BooleanLiteral: " << boolLiteral->value << std::endl;
+            auto result = std::make_shared<Boolean>(boolLiteral->value);
+            std::cout << "Debug: Created Boolean object: " << result->inspect() << std::endl;
+            return result;
+        }
+        if (auto strLiteral = dynamic_cast<const AST::StringLiteral*>(node))
+        {
+            std::cout << "Debug: Found StringLiteral: " << strLiteral->getValue() << std::endl;
+            return std::make_shared<String>(strLiteral->getValue());
+        }
+
+        // 演算子の評価
+        if (auto prefixExpr = dynamic_cast<const AST::PrefixExpression*>(node))
+        {
+            std::cout << "Debug: Found PrefixExpression: " << prefixExpr->op << std::endl;
+            auto right = eval(prefixExpr->right.get());
+            std::cout << "Debug: PrefixExpression right operand: " 
+                      << (right ? right->inspect() : "null") << std::endl;
+            if (!right || isError(right)) return right;
+            auto result = evalPrefixExpression(prefixExpr->op, right);
+            std::cout << "Debug: PrefixExpression result: " 
+                      << (result ? result->inspect() : "null") << std::endl;
+            return result;
+        }
+
+        if (auto infixExpr = dynamic_cast<const AST::InfixExpression*>(node))
+        {
+            std::cout << "\n=== Evaluating Infix Expression ===" << std::endl;
+            std::cout << "Debug: Operator: " << infixExpr->op << std::endl;
+            std::cout << "Debug: Left operand: " << (infixExpr->left ? infixExpr->left->String() : "null") << std::endl;
+            std::cout << "Debug: Right operand: " << (infixExpr->right ? infixExpr->right->String() : "null") << std::endl;
+            
+            // 文字列連結の特別処理
+            if (auto leftStr = dynamic_cast<const AST::StringLiteral*>(infixExpr->left.get()))
+            {
+                if (auto rightStr = dynamic_cast<const AST::StringLiteral*>(infixExpr->right.get()))
+                {
+                    if (infixExpr->op == "+")
+                    {
+                        std::cout << "Debug: String concatenation" << std::endl;
+                        auto result = std::make_shared<String>(leftStr->getValue() + rightStr->getValue());
+                        std::cout << "Debug: Concatenation result: " << result->inspect() << std::endl;
+                        return result;
+                    }
+                }
+            }
+
+            auto left = eval(infixExpr->left.get());
+            std::cout << "Debug: Evaluated left operand: " << (left ? left->inspect() : "null") << std::endl;
+            if (!left || isError(left)) return left;
+            
+            auto right = eval(infixExpr->right.get());
+            std::cout << "Debug: Evaluated right operand: " << (right ? right->inspect() : "null") << std::endl;
+            if (!right || isError(right)) return right;
+            
+            auto result = evalInfixExpression(infixExpr->op, left, right);
+            std::cout << "Debug: InfixExpression result: " << (result ? result->inspect() : "null") << std::endl;
+            return result;
+        }
+
+        // 配列リテラルの評価
+        if (auto arrayLiteral = dynamic_cast<const AST::ArrayLiteral*>(node))
+        {
+            std::cout << "Debug: Found ArrayLiteral" << std::endl;
+            return evalArrayLiteral(arrayLiteral);
+        }
+
+        // インデックス式の評価
+        if (auto indexExpr = dynamic_cast<const AST::IndexExpression*>(node))
+        {
+            std::cout << "Debug: Found IndexExpression" << std::endl;
+            return evalIndexExpression(indexExpr);
+        }
+
+        // if式の評価
+        if (auto ifExpr = dynamic_cast<const AST::IfExpression*>(node))
+        {
+            std::cout << "Debug: Found IfExpression" << std::endl;
+            auto condition = eval(ifExpr->getCondition());
+            if (isError(condition)) return condition;
+
+            if (isTruthy(condition))
+            {
+                std::cout << "Debug: Condition is truthy, evaluating consequence" << std::endl;
+                return eval(ifExpr->getConsequence());
+            }
+            else if (ifExpr->getAlternative())
+            {
+                std::cout << "Debug: Condition is falsy, evaluating alternative" << std::endl;
+                return eval(ifExpr->getAlternative());
+            }
+            else
+            {
+                std::cout << "Debug: No alternative, returning Null" << std::endl;
+                return std::make_shared<Null>();
+            }
+        }
+
+        // let文の評価
+        if (auto letStmt = dynamic_cast<const AST::LetStatement*>(node))
+        {
+            std::cout << "Debug: Found LetStatement" << std::endl;
+            if (!letStmt->name || !letStmt->value)
+            {
+                std::cout << "Debug: Invalid let statement" << std::endl;
+                return newError("invalid let statement");
+            }
+
+            auto value = eval(letStmt->value.get());
+            if (isError(value))
+            {
+                std::cout << "Debug: Error evaluating let value" << std::endl;
+                return value;
+            }
+
+            env->Set(letStmt->name->value, value);
+            return value;
+        }
+
+        // 識別子の評価
+        if (auto ident = dynamic_cast<const AST::Identifier*>(node))
+        {
+            std::cout << "Debug: Found Identifier: " << ident->value << std::endl;
+            return evalIdentifier(ident);
+        }
+
+        // return文の評価
+        if (auto returnStmt = dynamic_cast<const AST::ReturnStatement*>(node))
+        {
+            std::cout << "Debug: Found ReturnStatement" << std::endl;
+            if (!returnStmt->returnValue)
+            {
+                std::cout << "Debug: Return value is null" << std::endl;
+                return newError("return value is null");
+            }
+
+            auto value = eval(returnStmt->returnValue.get());
+            if (isError(value))
+            {
+                std::cout << "Debug: Error evaluating return value" << std::endl;
+                return value;
+            }
+
+            std::cout << "Debug: Creating ReturnValue object with value: " 
+                      << value->inspect() << std::endl;
+            return std::make_shared<ReturnValue>(value);
+        }
+
+        // ブロック文の評価
+        if (auto blockStmt = dynamic_cast<const AST::BlockStatement*>(node))
+        {
+            std::cout << "\n=== Evaluating Block Statement ===" << std::endl;
+            std::cout << "Debug: Block contents: " << blockStmt->String() << std::endl;
+            std::cout << "Debug: Number of statements: " << blockStmt->statements.size() << std::endl;
+            return evalBlockStatement(blockStmt);
+        }
+
+        std::cout << "\nDebug: No matching evaluation case found" << std::endl;
+        std::cout << "Debug: Node string: " << node->String() << std::endl;
+        return std::make_shared<Null>();
+
+    } catch (const std::exception& e) {
+        std::cout << "\nDebug: Exception caught during evaluation" << std::endl;
+        std::cout << "Debug: Exception message: " << e.what() << std::endl;
+        std::cout << "Debug: Node string: " << node->String() << std::endl;
+        return newError("Runtime error: " + std::string(e.what()));
     }
-    return result ? result : std::make_shared<Null>();
 }
 
-ObjectPtr Evaluator::evalPrefixExpression(const AST::PrefixExpression *expr)
+ObjectPtr Evaluator::evalPrefixExpression(const std::string& op, ObjectPtr right)
 {
-    if (!expr || !expr->right)
-    {
-        return newError("invalid prefix expression");
-    }
+    std::cout << "\n=== Evaluating Prefix Expression ===" << std::endl;
+    std::cout << "Debug: Operator: " << op << std::endl;
+    std::cout << "Debug: Right operand: " << (right ? right->inspect() : "null") << std::endl;
+    std::cout << "Debug: Right operand type: " << (right ? objectTypeToString(right->type()) : "null") << std::endl;
 
-    auto right = eval(expr->right.get());
-    if (isError(right))
-        return right;
-
-    if (expr->op == "!")
+    if (op == "!")
     {
         return evalBangOperatorExpression(right);
     }
-    if (expr->op == "-")
+    else if (op == "-")
     {
-        return evalMinusPrefixOperatorExpression(right);
+        if (auto intObj = std::dynamic_pointer_cast<Integer>(right))
+        {
+            auto result = std::make_shared<Integer>(-intObj->value());
+            std::cout << "Debug: Negation result: " << result->inspect() << std::endl;
+            return result;
+        }
+        auto error = newError("unknown operator: -" + objectTypeToString(right->type()));
+        std::cout << "Debug: Error: " << error->inspect() << std::endl;
+        return error;
     }
 
-    return newError("unknown operator: " + expr->op);
+    auto error = newError("unknown operator: " + op + objectTypeToString(right->type()));
+    std::cout << "Debug: Error: " << error->inspect() << std::endl;
+    return error;
 }
 
-ObjectPtr Evaluator::evalMinusPrefixOperatorExpression(const ObjectPtr &right)
+ObjectPtr Evaluator::evalInfixExpression(const std::string& op, ObjectPtr left, ObjectPtr right)
 {
-    if (auto integer = std::dynamic_pointer_cast<Integer>(right))
-    {
-        return std::make_shared<Integer>(-integer->value());
-    }
-    return newError("invalid operator: -" + objectTypeToString(right->type()));
-}
+    std::cout << "\n=== Evaluating Infix Expression ===" << std::endl;
+    std::cout << "Debug: Operator: " << op << std::endl;
+    std::cout << "Debug: Left operand: " << (left ? left->inspect() : "null") << " (type: " 
+              << (left ? objectTypeToString(left->type()) : "null") << ")" << std::endl;
+    std::cout << "Debug: Right operand: " << (right ? right->inspect() : "null") << " (type: "
+              << (right ? objectTypeToString(right->type()) : "null") << ")" << std::endl;
 
-ObjectPtr Evaluator::evalInfixExpression(const AST::InfixExpression *expr)
-{
-    if (!expr || !expr->left || !expr->right)
-    {
-        return newError("invalid infix expression");
-    }
-
-    auto left = eval(expr->left.get());
-    if (isError(left))
-        return left;
-
-    auto right = eval(expr->right.get());
-    if (isError(right))
-        return right;
-
-    return evalInfixOperation(expr->op, left, right);
-}
-
-ObjectPtr Evaluator::evalInfixOperation(const std::string &op, const ObjectPtr &left,
-                                        const ObjectPtr &right)
-{
+    // 型が異なる場合は先にチェック
     if (left->type() != right->type())
     {
-        return newError("type mismatch: " + objectTypeToString(left->type()) + " " + op + " " +
-                        objectTypeToString(right->type()));
+        auto error = newError("type mismatch: " + objectTypeToString(left->type()) + " " + op + " " + 
+                            objectTypeToString(right->type()));
+        std::cout << "Debug: Type mismatch error: " << error->inspect() << std::endl;
+        return error;
     }
 
-    // 整数演算
-    std::shared_ptr<Integer> leftInt = std::dynamic_pointer_cast<Integer>(left);
-    if (leftInt)
+    // 真偽値の演算
+    if (left->type() == ObjectType::BOOLEAN)
     {
-        return evalIntegerInfixExpression(op, leftInt, std::dynamic_pointer_cast<Integer>(right));
+        auto leftBool = std::dynamic_pointer_cast<Boolean>(left);
+        auto rightBool = std::dynamic_pointer_cast<Boolean>(right);
+
+        if (op == "==") return std::make_shared<Boolean>(leftBool->value() == rightBool->value());
+        if (op == "!=") return std::make_shared<Boolean>(leftBool->value() != rightBool->value());
+        if (op == "&&") return std::make_shared<Boolean>(leftBool->value() && rightBool->value());
+        if (op == "||") return std::make_shared<Boolean>(leftBool->value() || rightBool->value());
+
+        // 真偽値に対する無効な演算子の場合はエラーを返す
+        auto error = newError("unknown operator: " + objectTypeToString(left->type()) + " " + op + " " + 
+                            objectTypeToString(right->type()));
+        std::cout << "Debug: Invalid boolean operation error: " << error->inspect() << std::endl;
+        return error;
     }
 
-    // 真偽値演算
-    std::shared_ptr<Boolean> leftBool = std::dynamic_pointer_cast<Boolean>(left);
-    if (leftBool)
+    // 整数の演算
+    if (left->type() == ObjectType::INTEGER)
     {
-        return evalBooleanInfixExpression(op, leftBool, std::dynamic_pointer_cast<Boolean>(right));
+        auto leftInt = std::dynamic_pointer_cast<Integer>(left);
+        auto rightInt = std::dynamic_pointer_cast<Integer>(right);
+
+        if (op == "+") return std::make_shared<Integer>(leftInt->value() + rightInt->value());
+        if (op == "-") return std::make_shared<Integer>(leftInt->value() - rightInt->value());
+        if (op == "*") return std::make_shared<Integer>(leftInt->value() * rightInt->value());
+        if (op == "/") {
+            if (rightInt->value() == 0) return newError("division by zero");
+            return std::make_shared<Integer>(leftInt->value() / rightInt->value());
+        }
+        if (op == "<") return std::make_shared<Boolean>(leftInt->value() < rightInt->value());
+        if (op == ">") return std::make_shared<Boolean>(leftInt->value() > rightInt->value());
+        if (op == "==") return std::make_shared<Boolean>(leftInt->value() == rightInt->value());
+        if (op == "!=") return std::make_shared<Boolean>(leftInt->value() != rightInt->value());
+
+        return newError("unknown operator: " + objectTypeToString(left->type()) + " " + op + " " + 
+                       objectTypeToString(right->type()));
     }
 
-    // 字列演算
-    std::shared_ptr<String> leftStr = std::dynamic_pointer_cast<String>(left);
-    if (leftStr)
+    // 文字列の連結
+    if (left->type() == ObjectType::STRING)
     {
-        return evalStringInfixExpression(op, leftStr, std::dynamic_pointer_cast<String>(right));
+        if (op == "+") {
+            auto leftStr = std::dynamic_pointer_cast<String>(left);
+            auto rightStr = std::dynamic_pointer_cast<String>(right);
+            return std::make_shared<String>(leftStr->getValue() + rightStr->getValue());
+        }
+        return newError("unknown operator: " + objectTypeToString(left->type()) + " " + op + " " + 
+                       objectTypeToString(right->type()));
     }
 
-    return newError("unknown operator: " + objectTypeToString(left->type()) + " " + op + " " +
-                    objectTypeToString(right->type()));
+    auto result = newError("unknown operator: " + objectTypeToString(left->type()) + " " + op + " " + 
+                           objectTypeToString(right->type()));
+    std::cout << "Debug: Error result: " << result->inspect() << std::endl;
+    return result;
 }
 
-ObjectPtr Evaluator::evalIntegerInfixExpression(const std::string &op,
-                                                const std::shared_ptr<Integer> &left,
-                                                const std::shared_ptr<Integer> &right)
+ObjectPtr Evaluator::evalIntegerInfixExpression(
+    const std::string& op, std::shared_ptr<Integer> left, std::shared_ptr<Integer> right)
 {
-    auto leftVal = left->value();
-    auto rightVal = right->value();
-
-    if (op == "*")
-        return std::make_shared<Integer>(leftVal * rightVal);
-    if (op == "/")
-    {
-        if (rightVal == 0)
-            return newError("division by zero");
-        return std::make_shared<Integer>(leftVal / rightVal);
+    try {
+        if (op == "+") return std::make_shared<Integer>(left->value() + right->value());
+        if (op == "-") return std::make_shared<Integer>(left->value() - right->value());
+        if (op == "*") return std::make_shared<Integer>(left->value() * right->value());
+        if (op == "/") {
+            if (right->value() == 0) {
+                return newError("division by zero");
+            }
+            return std::make_shared<Integer>(left->value() / right->value());
+        }
+        // ... 他の演算子 ...
+    } catch (const std::exception& e) {
+        return newError("Integer operation error: " + std::string(e.what()));
     }
-    if (op == "+")
-        return std::make_shared<Integer>(leftVal + rightVal);
-    if (op == "-")
-        return std::make_shared<Integer>(leftVal - rightVal);
-    if (op == "<")
-        return std::make_shared<Boolean>(leftVal < rightVal);
-    if (op == ">")
-        return std::make_shared<Boolean>(leftVal > rightVal);
-    if (op == "==")
-        return std::make_shared<Boolean>(leftVal == rightVal);
-    if (op == "!=")
-        return std::make_shared<Boolean>(leftVal != rightVal);
 
-    return newError("unknown operator: INTEGER " + op + " INTEGER");
-}
-
-ObjectPtr Evaluator::evalBooleanInfixExpression(const std::string &op,
-                                                const std::shared_ptr<Boolean> &left,
-                                                const std::shared_ptr<Boolean> &right)
-{
-    if (op == "==")
-        return std::make_shared<Boolean>(left->value() == right->value());
-    if (op == "!=")
-        return std::make_shared<Boolean>(left->value() != right->value());
-    return newError("unknown operator: BOOLEAN " + op + " BOOLEAN");
-}
-
-ObjectPtr Evaluator::evalStringInfixExpression(const std::string &op,
-                                               const std::shared_ptr<String> &left,
-                                               const std::shared_ptr<String> &right)
-{
-    if (op == "+")
-        return std::make_shared<String>(left->getValue() + right->getValue());
-    return newError("unknown operator: STRING " + op + " STRING");
-}
-
-ObjectPtr Evaluator::evalIntegerLiteral(const AST::IntegerLiteral *node)
-{
-    if (!node)
-    {
-        return std::make_shared<Null>();
-    }
-    return std::static_pointer_cast<Object>(std::make_shared<Integer>(node->value));
+    return newError(
+        "unknown operator: " + objectTypeToString(left->type()) + " " + op + " " + 
+        objectTypeToString(right->type()));
 }
 
 ObjectPtr Evaluator::evalBooleanLiteral(const AST::BooleanLiteral *node)
@@ -518,92 +604,99 @@ ObjectPtr Evaluator::evalFunctionLiteral(const AST::FunctionLiteral *node)
     return fn;
 }
 
-ObjectPtr Evaluator::evalIdentifier(const AST::Identifier *node)
+ObjectPtr Evaluator::evalIdentifier(const AST::Identifier* ident)
 {
-    if (!node)
+    std::cout << "Debug: Evaluating identifier: " << ident->value << std::endl;
+    
+    if (!env)
     {
-        return std::make_shared<Null>();
+        std::cout << "Debug: Environment is null" << std::endl;
+        return newError("environment is null");
     }
 
-    if (auto obj = env->Get(node->value))
+    auto value = env->Get(ident->value);
+    if (auto error = std::dynamic_pointer_cast<Error>(value))
     {
-        return obj;
+        std::cout << "Debug: Identifier not found: " << ident->value << std::endl;
+        return error;
     }
 
-    return newError("identifier not found: " + node->value);
+    std::cout << "Debug: Identifier value: " << value->inspect() << std::endl;
+    return value;
 }
 
-ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement *block)
+ObjectPtr Evaluator::evalBlockStatement(const AST::BlockStatement* block)
 {
+    std::cout << "\n=== Evaluating Block Statement ===" << std::endl;
+    std::cout << "Debug: Block contents: " << block->String() << std::endl;
+    std::cout << "Debug: Number of statements: " << block->statements.size() << std::endl;
+    
     if (!block)
     {
         std::cout << "Debug: Block is null" << std::endl;
-        return std::make_shared<Null>();
+        return newError("block statement is null");
     }
 
-    std::cout << "Debug: Block address: " << block << std::endl;
-
-    // statementsメンバーの有効性を確認
-    try
+    ObjectPtr result;
+    for (const auto& stmt : block->statements)
     {
-        size_t stmtSize = block->statements.size();
-        std::cout << "Debug: Number of statements: " << stmtSize << std::endl;
-
-        if (stmtSize > 1000)
-        { // より現実的な上限値に変更
-            std::cout << "Debug: Too many statements" << std::endl;
-            return newError("too many statements in block");
+        if (!stmt)
+        {
+            std::cout << "Debug: Statement is null" << std::endl;
+            continue;
         }
 
-        ObjectPtr result = std::make_shared<Null>();
+        std::cout << "Debug: Evaluating statement in block: " << stmt->String() << std::endl;
+        result = eval(stmt.get());
 
-        for (const auto &stmt : block->statements)
+        // エラーまたは戻り値の場合は即座に返す
+        if (result)
         {
-            if (!stmt)
-            {
-                std::cout << "Debug: Statement is null" << std::endl;
-                continue;
-            }
-
-            std::cout << "Debug: Evaluating statement: " << stmt->String() << std::endl;
-            result = eval(stmt.get());
-
             if (isError(result))
             {
+                std::cout << "Debug: Error in block statement: " << result->inspect() << std::endl;
                 return result;
             }
-
-            if (result && result->type() == ObjectType::RETURN_VALUE)
+            if (result->type() == ObjectType::RETURN_VALUE)
             {
+                std::cout << "Debug: Found return value in block" << std::endl;
                 return result;
             }
         }
+    }
 
-        return result;
-    }
-    catch (const std::exception &e)
+    // 結果がnullの場合はエラーを返す
+    if (!result)
     {
-        std::cout << "Debug: Exception caught: " << e.what() << std::endl;
-        return newError("invalid block statement");
+        std::cout << "Debug: Block evaluation result is null, returning error" << std::endl;
+        return newError("block statement evaluation failed");
     }
+
+    std::cout << "Debug: Block evaluation result: " << result->inspect() << std::endl;
+    return result;
 }
 
-ObjectPtr Evaluator::evalLetStatement(const AST::LetStatement *letStmt)
+ObjectPtr Evaluator::evalLetStatement(const AST::LetStatement* letStmt)
 {
-    if (!letStmt || !letStmt->value || !letStmt->name)
+    std::cout << "Debug: Evaluating let statement" << std::endl;
+    
+    if (!letStmt || !letStmt->value)
     {
+        std::cout << "Debug: Invalid let statement" << std::endl;
         return std::make_shared<Null>();
     }
 
     auto value = eval(letStmt->value.get());
-    if (isError(value))
+    if (isError(value)) return value;
+
+    if (!env)
     {
-        return value;
+        std::cout << "Debug: Environment is null" << std::endl;
+        return newError("environment is null");
     }
 
-    // 変数をバインドする際にも追跡
-    trackObject();
-    return env->Set(letStmt->name->value, value);
+    env->Set(letStmt->name->value, value);
+    return value;
 }
 
 ObjectPtr Evaluator::evalReturnStatement(const AST::ReturnStatement *returnStmt)
@@ -641,7 +734,7 @@ ObjectPtr Evaluator::evalCallExpression(const AST::CallExpression *call)
         return function;
     }
 
-    // 引数を評価
+    // 引数評価
     std::cout << "Debug: Evaluating arguments" << std::endl;
     std::vector<ObjectPtr> args;
     args.reserve(call->arguments.size());
@@ -810,28 +903,32 @@ ObjectPtr Evaluator::evalIndexExpression(const AST::IndexExpression *indexExpr)
     return newError("index operator not supported: " + objectTypeToString(left->type()));
 }
 
-ObjectPtr Evaluator::evalArrayIndexExpression(const ObjectPtr &array, const ObjectPtr &index)
+ObjectPtr Evaluator::evalArrayIndexExpression(const ObjectPtr& array, const ObjectPtr& index)
 {
+    std::cout << "Debug: Evaluating array index expression" << std::endl;
+
     auto arrayObj = std::dynamic_pointer_cast<Array>(array);
     if (!arrayObj)
     {
-        return newError("not an array");
+        std::cout << "Debug: Not an array object" << std::endl;
+        return newError("index operator not supported: " + objectTypeToString(array->type()));
     }
 
     auto intIndex = std::dynamic_pointer_cast<Integer>(index);
     if (!intIndex)
     {
+        std::cout << "Debug: Index is not an integer" << std::endl;
         return newError("array index must be an integer");
     }
 
     auto idx = intIndex->value();
-    auto max = static_cast<int64_t>(arrayObj->elements.size());
-
-    if (idx < 0 || idx >= max)
+    if (idx < 0 || static_cast<size_t>(idx) >= arrayObj->elements.size())
     {
+        std::cout << "Debug: Index out of bounds: " << idx << std::endl;
         return std::make_shared<Null>();
     }
 
+    std::cout << "Debug: Returning array element at index " << idx << std::endl;
     return arrayObj->elements[idx];
 }
 
@@ -927,6 +1024,78 @@ EnvPtr Evaluator::getEnv() const
 void Evaluator::setEnv(EnvPtr newEnv)
 {
     env = std::move(newEnv);
+}
+
+ObjectPtr Evaluator::evalIntegerLiteral(const AST::IntegerLiteral* node)
+{
+    if (!node) return std::make_shared<Null>();
+    return std::make_shared<Integer>(node->value);
+}
+
+bool Evaluator::isError(const ObjectPtr& obj)
+{
+    if (!obj) return false;
+    return obj->type() == ObjectType::ERROR;
+}
+
+ObjectPtr Evaluator::evalProgram(const AST::Program* program)
+{
+    if (!program)
+        return std::make_shared<Null>();
+
+    ObjectPtr result = std::make_shared<Null>();
+    for (const auto& stmt : program->statements)
+    {
+        if (!stmt)
+            continue;
+
+        result = eval(stmt.get());
+
+        // エラーまたは戻り値の場合は即座に返す
+        if (auto returnValue = std::dynamic_pointer_cast<ReturnValue>(result))
+        {
+            return returnValue->value;
+        }
+        if (isError(result))
+        {
+            return result;
+        }
+    }
+
+    return result;
+}
+
+bool Evaluator::isTruthy(const ObjectPtr& obj)
+{
+    std::cout << "Debug: Checking truthiness of object: " 
+              << (obj ? obj->inspect() : "null") << std::endl;
+
+    if (!obj)
+    {
+        std::cout << "Debug: Object is null, returning false" << std::endl;
+        return false;
+    }
+
+    if (auto boolean = std::dynamic_pointer_cast<Boolean>(obj))
+    {
+        std::cout << "Debug: Object is Boolean with value: " << boolean->value() << std::endl;
+        return boolean->value();
+    }
+
+    if (obj->type() == ObjectType::NULL_OBJ)
+    {
+        std::cout << "Debug: Object is Null, returning false" << std::endl;
+        return false;
+    }
+
+    if (auto integer = std::dynamic_pointer_cast<Integer>(obj))
+    {
+        std::cout << "Debug: Object is Integer with value: " << integer->value() << std::endl;
+        return integer->value() != 0;
+    }
+
+    std::cout << "Debug: Object is truthy by default" << std::endl;
+    return true;
 }
 
 } // namespace monkey

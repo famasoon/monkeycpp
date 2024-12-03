@@ -274,4 +274,75 @@ class HashLiteral : public Expression
     Expression *clone() const override;
 };
 
+class IfExpression : public Expression {
+private:
+    Token::Token token;  // 'if'トークン
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<BlockStatement> consequence;
+    std::unique_ptr<BlockStatement> alternative;
+
+public:
+    IfExpression(Token::Token tok,
+                 std::unique_ptr<Expression> cond,
+                 std::unique_ptr<BlockStatement> cons,
+                 std::unique_ptr<BlockStatement> alt = nullptr)
+        : token(std::move(tok)), 
+          condition(std::move(cond)), 
+          consequence(std::move(cons)), 
+          alternative(std::move(alt)) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override {
+        std::string result = "if" + condition->String() + " " + consequence->String();
+        if (alternative) {
+            result += "else " + alternative->String();
+        }
+        return result;
+    }
+    Expression* clone() const override {
+        return new IfExpression(
+            token,
+            std::unique_ptr<Expression>(condition->clone()),
+            std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(consequence->clone())),
+            alternative ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(alternative->clone())) : nullptr
+        );
+    }
+
+    const Expression* getCondition() const { return condition.get(); }
+    const BlockStatement* getConsequence() const { return consequence.get(); }
+    const BlockStatement* getAlternative() const { return alternative.get(); }
+};
+
+class WhileExpression : public Expression {
+private:
+    Token::Token token;  // 'while'トークン
+    std::unique_ptr<Expression> condition;
+    std::unique_ptr<BlockStatement> body;
+
+public:
+    WhileExpression(Token::Token tok,
+                   std::unique_ptr<Expression> cond,
+                   std::unique_ptr<BlockStatement> b)
+        : token(std::move(tok)), 
+          condition(std::move(cond)), 
+          body(std::move(b)) {}
+
+    void expressionNode() override {}
+    std::string TokenLiteral() const override { return token.literal; }
+    std::string String() const override {
+        return "while" + condition->String() + " " + body->String();
+    }
+    Expression* clone() const override {
+        return new WhileExpression(
+            token,
+            std::unique_ptr<Expression>(condition->clone()),
+            std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(body->clone()))
+        );
+    }
+
+    const Expression* getCondition() const { return condition.get(); }
+    const BlockStatement* getBody() const { return body.get(); }
+};
+
 } // namespace AST
