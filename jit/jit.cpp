@@ -1,5 +1,6 @@
 #include "jit.hpp"
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Transforms/Scalar/GVN.h>
 
 namespace JIT
 {
@@ -9,17 +10,74 @@ Compiler::Compiler()
     context = std::make_unique<llvm::LLVMContext>();
     builder = std::make_unique<llvm::IRBuilder<>>(*context);
     module = std::make_unique<llvm::Module>("monkey_jit", *context);
+    setOptimizationLevel(2); // デフォルトで-O2最適化
 }
 
-void Compiler::compile(const AST::Program &program)
+void Compiler::setOptimizationLevel(unsigned level)
 {
-    for (const auto &stmt : program.statements)
+    initializeOptimizations(level);
+}
+
+void Compiler::initializeOptimizations(unsigned level)
+{
+    llvm::PassBuilder passBuilder;
+
+    // 最適化パイプラインの設定
+    llvm::LoopAnalysisManager loopAnalysisManager;
+    llvm::FunctionAnalysisManager functionAnalysisManager;
+    llvm::CGSCCAnalysisManager cGSCCAnalysisManager;
+    llvm::ModuleAnalysisManager moduleAnalysisManager;
+
+    // 分析マネージャーの登録
+    passBuilder.registerModuleAnalyses(moduleAnalysisManager);
+    passBuilder.registerCGSCCAnalyses(cGSCCAnalysisManager);
+    passBuilder.registerFunctionAnalyses(functionAnalysisManager);
+    passBuilder.registerLoopAnalyses(loopAnalysisManager);
+    passBuilder.crossRegisterProxies(loopAnalysisManager, functionAnalysisManager,
+                                   cGSCCAnalysisManager, moduleAnalysisManager);
+
+    // 最適化レベルに応じたパスの設定
+    switch (level)
+    {
+        case 0: // -O0
+            passManager = passBuilder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0);
+            break;
+        case 1: // -O1
+            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O1);
+            break;
+        case 2: // -O2
+            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+            break;
+        case 3: // -O3
+            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+            break;
+        default:
+            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    }
+
+    // 関数レベルの最適化パスの設定
+    functionPassManager = passBuilder.buildFunctionSimplificationPipeline(
+        llvm::OptimizationLevel::O2, llvm::ThinOrFullLTOPhase::None);
+}
+
+void Compiler::compile(const AST::Program& program)
+{
+    for (const auto& stmt : program.statements)
     {
         if (stmt)
         {
             compileStatement(stmt.get());
         }
     }
+    
+    // コンパイル後に最適化を実行
+    runOptimizations();
+}
+
+void Compiler::runOptimizations()
+{
+    // モジュールレベルの最適化を実行
+    passManager.run(*module, moduleAnalysisManager);
 }
 
 void Compiler::compileStatement(const AST::Statement *stmt)
