@@ -1,13 +1,13 @@
 #pragma once
-#include "../object/object.hpp"
 #include "../ast/ast.hpp"
+#include "../object/object.hpp"
 #include <memory>
 
 namespace monkey
 {
 
-  class Evaluator
-  {
+class Evaluator
+{
   public:
     Evaluator();
     ObjectPtr eval(const AST::Node *node);
@@ -44,25 +44,20 @@ namespace monkey
     // 演算子の評価
     ObjectPtr evalBangOperatorExpression(const ObjectPtr &right);
     ObjectPtr evalMinusPrefixOperatorExpression(const ObjectPtr &right);
-    ObjectPtr evalInfixOperation(const std::string &op,
-                                 const ObjectPtr &left,
+    ObjectPtr evalInfixOperation(const std::string &op, const ObjectPtr &left,
                                  const ObjectPtr &right);
 
     // 型別の中置演算子の評価
-    ObjectPtr evalIntegerInfixExpression(
-        const std::string &op,
-        const std::shared_ptr<Integer> &left,
-        const std::shared_ptr<Integer> &right);
+    ObjectPtr evalIntegerInfixExpression(const std::string &op,
+                                         const std::shared_ptr<Integer> &left,
+                                         const std::shared_ptr<Integer> &right);
 
-    ObjectPtr evalBooleanInfixExpression(
-        const std::string &op,
-        const std::shared_ptr<Boolean> &left,
-        const std::shared_ptr<Boolean> &right);
+    ObjectPtr evalBooleanInfixExpression(const std::string &op,
+                                         const std::shared_ptr<Boolean> &left,
+                                         const std::shared_ptr<Boolean> &right);
 
-    ObjectPtr evalStringInfixExpression(
-        const std::string &op,
-        const std::shared_ptr<String> &left,
-        const std::shared_ptr<String> &right);
+    ObjectPtr evalStringInfixExpression(const std::string &op, const std::shared_ptr<String> &left,
+                                        const std::shared_ptr<String> &right);
 
     // 配列関連の評価
     ObjectPtr evalArrayLiteral(const AST::ArrayLiteral *array);
@@ -72,6 +67,6 @@ namespace monkey
     // ハッシュ関連の評価
     ObjectPtr evalHashLiteral(const AST::HashLiteral *node);
     ObjectPtr evalHashIndexExpression(const ObjectPtr &hash, const ObjectPtr &index);
-  };
+};
 
 } // namespace monkey

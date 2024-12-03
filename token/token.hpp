@@ -4,9 +4,9 @@
 namespace Token
 {
 
-  // トークンの種類を表す列挙型
-  enum class TokenType
-  {
+// トークンの種類を表す列挙型
+enum class TokenType
+{
     ILLEGAL,
     EOF_,
 
@@ -46,15 +46,15 @@ namespace Token
     ELSE,
     RETURN,
 
-    LBRACKET,  // [
-    RBRACKET,  // ]
-  };
+    LBRACKET, // [
+    RBRACKET, // ]
+};
 
-  // TokenTypeを文字列に変換する関数
-  std::string toString(TokenType type);
+// TokenTypeを文字列に変換する関数
+std::string toString(TokenType type);
 
-  class Token
-  {
+class Token
+{
   public:
     TokenType type;
     std::string literal;
@@ -96,6 +96,6 @@ namespace Token
     static const std::string RETURN;
     static const std::string LBRACKET;
     static const std::string RBRACKET;
-  };
+};
 
 } // namespace Token

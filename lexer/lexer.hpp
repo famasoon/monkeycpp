@@ -5,8 +5,8 @@
 namespace Lexer
 {
 
-  class Lexer
-  {
+class Lexer
+{
   private:
     std::string input;
     size_t position;     // 現在の位置
@@ -24,6 +24,6 @@ namespace Lexer
   public:
     explicit Lexer(std::string input);
     Token::Token NextToken();
-  };
+};
 
 } // namespace Lexer

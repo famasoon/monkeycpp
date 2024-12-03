@@ -1,29 +1,39 @@
 #pragma once
-#include "../lexer/lexer.hpp"
 #include "../ast/ast.hpp"
-#include <memory>
-#include <vector>
-#include <string>
+#include "../lexer/lexer.hpp"
 #include <functional>
-#include <unordered_map>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace Parser
 {
 
-  class Parser
-  {
+class Parser
+{
     using PrefixParseFn = std::function<std::unique_ptr<AST::Expression>()>;
-    using InfixParseFn = std::function<std::unique_ptr<AST::Expression>(std::unique_ptr<AST::Expression>)>;
+    using InfixParseFn =
+        std::function<std::unique_ptr<AST::Expression>(std::unique_ptr<AST::Expression>)>;
 
   public:
     explicit Parser(std::unique_ptr<Lexer::Lexer> lexer);
     std::unique_ptr<AST::Program> ParseProgram();
-    const std::vector<std::string> &Errors() const { return errors; }
+    const std::vector<std::string> &Errors() const
+    {
+        return errors;
+    }
 
     // デバッグ設定
-    void setDebugMode(bool enable) { debugMode = enable; }
-    void setDebugOutput(std::ostream &out) { debugOut = &out; }
+    void setDebugMode(bool enable)
+    {
+        debugMode = enable;
+    }
+    void setDebugOutput(std::ostream &out)
+    {
+        debugOut = &out;
+    }
 
   private:
     std::unique_ptr<Lexer::Lexer> lexer;
@@ -38,21 +48,30 @@ namespace Parser
     std::ostream *debugOut = &std::cout;
     int indentLevel = 0;
     void trace(const std::string &msg);
-    void increaseIndent() { indentLevel++; }
-    void decreaseIndent() { indentLevel--; }
-    std::string getIndent() const { return std::string(indentLevel * 2, ' '); }
+    void increaseIndent()
+    {
+        indentLevel++;
+    }
+    void decreaseIndent()
+    {
+        indentLevel--;
+    }
+    std::string getIndent() const
+    {
+        return std::string(indentLevel * 2, ' ');
+    }
 
     // 優先順位の定義
     enum class Precedence
     {
-      LOWEST = 1,
-      EQUALS,      // ==
-      LESSGREATER, // > または <
-      SUM,         // +
-      PRODUCT,     // *
-      PREFIX,      // -X または !X
-      CALL,        // myFunction(X)
-      INDEX        // array[index]
+        LOWEST = 1,
+        EQUALS,      // ==
+        LESSGREATER, // > または <
+        SUM,         // +
+        PRODUCT,     // *
+        PREFIX,      // -X または !X
+        CALL,        // myFunction(X)
+        INDEX        // array[index]
     };
 
     static std::unordered_map<Token::TokenType, Precedence> precedences;
@@ -103,6 +122,6 @@ namespace Parser
     // パース関数
     std::unique_ptr<AST::Expression> parseArrayLiteral();
     std::unique_ptr<AST::Expression> parseIndexExpression(std::unique_ptr<AST::Expression> left);
-  };
+};
 
 } // namespace Parser

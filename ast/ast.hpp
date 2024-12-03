@@ -1,83 +1,87 @@
 #pragma once
 #include "../token/token.hpp"
-#include <string>
-#include <vector>
 #include <memory>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace AST
 {
-  // 前方宣言
-  class Expression;
-  class Statement;
-  using ExpressionPtr = std::unique_ptr<Expression>;
+// 前方宣言
+class Expression;
+class Statement;
+using ExpressionPtr = std::unique_ptr<Expression>;
 
-  // 基本インターフェース
-  class Node
-  {
+// 基本インターフェース
+class Node
+{
   public:
     virtual ~Node() = default;
     virtual std::string TokenLiteral() const = 0;
     virtual std::string String() const = 0;
-  };
+};
 
-  class Statement : public Node
-  {
+class Statement : public Node
+{
   public:
     virtual ~Statement() = default;
     virtual void statementNode() = 0;
-    virtual Statement* clone() const = 0;
-  };
+    virtual Statement *clone() const = 0;
+};
 
-  class Expression : public Node
-  {
+class Expression : public Node
+{
   public:
     virtual ~Expression() = default;
     virtual void expressionNode() = 0;
-    virtual Expression* clone() const = 0;
-  };
+    virtual Expression *clone() const = 0;
+};
 
-  // 式文
-  class ExpressionStatement : public Statement {
+// 式文
+class ExpressionStatement : public Statement
+{
   public:
     Token::Token token;
     std::unique_ptr<Expression> expression;
 
     explicit ExpressionStatement(Token::Token token);
-    ExpressionStatement(const ExpressionStatement& other);
+    ExpressionStatement(const ExpressionStatement &other);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override;
-  };
+    Statement *clone() const override;
+};
 
-  // ブロック文
-  class BlockStatement : public Statement {
+// ブロック文
+class BlockStatement : public Statement
+{
   public:
     Token::Token token;
     std::vector<std::unique_ptr<Statement>> statements;
 
     explicit BlockStatement(Token::Token token);
-    BlockStatement(const BlockStatement& other);
+    BlockStatement(const BlockStatement &other);
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override;
-  };
+    Statement *clone() const override;
+};
 
-  // プログラム全体を表すクラス（Statementクラスの後に移動）
-  class Program : public Node
-  {
+// プログラム全体を表すクラス（Statementクラスの後に移動）
+class Program : public Node
+{
   public:
     std::vector<std::unique_ptr<Statement>> statements;
 
     std::string TokenLiteral() const override;
     std::string String() const override;
-  };
+    void clearStatements();
+    void addStatement(std::unique_ptr<Statement> stmt);
+};
 
-  // 識別子
-  class Identifier : public Expression
-  {
+// 識別子
+class Identifier : public Expression
+{
   public:
     Token::Token token;
     std::string value;
@@ -86,12 +90,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // let文
-  class LetStatement : public Statement
-  {
+// let文
+class LetStatement : public Statement
+{
   public:
     Token::Token token;
     std::unique_ptr<Identifier> name;
@@ -101,12 +105,12 @@ namespace AST
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override;
-  };
+    Statement *clone() const override;
+};
 
-  // return文
-  class ReturnStatement : public Statement
-  {
+// return文
+class ReturnStatement : public Statement
+{
   public:
     Token::Token token;
     std::unique_ptr<Expression> returnValue;
@@ -115,12 +119,12 @@ namespace AST
     void statementNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Statement* clone() const override;
-  };
+    Statement *clone() const override;
+};
 
-  // 整数リテラル
-  class IntegerLiteral : public Expression
-  {
+// 整数リテラル
+class IntegerLiteral : public Expression
+{
   public:
     Token::Token token;
     int64_t value;
@@ -129,12 +133,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 前置式
-  class PrefixExpression : public Expression
-  {
+// 前置式
+class PrefixExpression : public Expression
+{
   public:
     Token::Token token;
     std::string op;
@@ -144,12 +148,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 中置式
-  class InfixExpression : public Expression
-  {
+// 中置式
+class InfixExpression : public Expression
+{
   public:
     Token::Token token;
     std::string op;
@@ -160,12 +164,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 真偽値リテラル
-  class BooleanLiteral : public Expression
-  {
+// 真偽値リテラル
+class BooleanLiteral : public Expression
+{
   public:
     Token::Token token;
     bool value;
@@ -174,12 +178,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 関数リテラル
-  class FunctionLiteral : public Expression
-  {
+// 関数リテラル
+class FunctionLiteral : public Expression
+{
   public:
     Token::Token token;
     std::vector<std::unique_ptr<Identifier>> parameters;
@@ -189,12 +193,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 呼び出し式
-  class CallExpression : public Expression
-  {
+// 呼び出し式
+class CallExpression : public Expression
+{
   public:
     Token::Token token;
     std::unique_ptr<Expression> function;
@@ -204,12 +208,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // 文字列リテラル
-  class StringLiteral : public Expression
-  {
+// 文字列リテラル
+class StringLiteral : public Expression
+{
   private:
     Token::Token token;
     std::string value;
@@ -219,28 +223,33 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    
-    const std::string& getValue() const { return value; }
-    Expression* clone() const override;
-  };
 
-  // 配列リテラル
-  class ArrayLiteral : public Expression {
+    const std::string &getValue() const
+    {
+        return value;
+    }
+    Expression *clone() const override;
+};
+
+// 配列リテラル
+class ArrayLiteral : public Expression
+{
   public:
-    Token::Token token;  // '['トークン
+    Token::Token token; // '['トークン
     std::vector<std::unique_ptr<Expression>> elements;
 
     explicit ArrayLiteral(Token::Token token);
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // インデックス式
-  class IndexExpression : public Expression {
+// インデックス式
+class IndexExpression : public Expression
+{
   public:
-    Token::Token token;  // '['トークン
+    Token::Token token; // '['トークン
     std::unique_ptr<Expression> left;
     std::unique_ptr<Expression> index;
 
@@ -248,11 +257,12 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
-  // ハッシュリテラル
-  class HashLiteral : public Expression {
+// ハッシュリテラル
+class HashLiteral : public Expression
+{
   public:
     Token::Token token; // '{'トークン
     std::unordered_map<std::unique_ptr<Expression>, std::unique_ptr<Expression>> pairs;
@@ -261,7 +271,7 @@ namespace AST
     void expressionNode() override;
     std::string TokenLiteral() const override;
     std::string String() const override;
-    Expression* clone() const override;
-  };
+    Expression *clone() const override;
+};
 
 } // namespace AST

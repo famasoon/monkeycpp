@@ -88,4 +88,38 @@ add_test(NAME parser_test COMMAND parser_test)
 add_test(NAME evaluator_test COMMAND evaluator_test)
 
 # 既存の設定に追加
-target_compile_features(monkey PRIVATE cxx_std_17) 
+target_compile_features(monkey PRIVATE cxx_std_17)
+
+# LLVMの設定
+if(APPLE)
+    execute_process(
+        COMMAND brew --prefix llvm
+        OUTPUT_VARIABLE LLVM_PREFIX
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    set(LLVM_DIR "${LLVM_PREFIX}/lib/cmake/llvm")
+else()
+    # Ubuntu用の設定
+    set(LLVM_DIR "/usr/lib/llvm-14/lib/cmake/llvm")  # バージョンは環境に応じて変更
+endif()
+
+find_package(LLVM REQUIRED CONFIG)
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
+# JITライブラリの追加
+add_library(jit
+    jit/jit.cpp
+)
+target_include_directories(jit PRIVATE ${LLVM_INCLUDE_DIRS})
+target_link_libraries(jit
+    monkey_lib
+    LLVM
+)
+
+# メインターゲットにJITを追加
+target_link_libraries(monkey
+    monkey_lib
+    evaluator
+    jit
+) 
