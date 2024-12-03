@@ -1,6 +1,7 @@
 #include "jit.hpp"
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/Scalar/GVN.h>
+#include <iostream>
 
 namespace JIT
 {
@@ -20,98 +21,137 @@ void Compiler::setOptimizationLevel(unsigned level)
 
 void Compiler::initializeOptimizations(unsigned level)
 {
-    llvm::PassBuilder passBuilder;
-
-    // 最適化パイプラインの設定
-    llvm::LoopAnalysisManager loopAnalysisManager;
-    llvm::FunctionAnalysisManager functionAnalysisManager;
-    llvm::CGSCCAnalysisManager cGSCCAnalysisManager;
-
-    // 分析マネージャーの登録
-    passBuilder.registerModuleAnalyses(moduleAnalysisManager);
-    passBuilder.registerCGSCCAnalyses(cGSCCAnalysisManager);
-    passBuilder.registerFunctionAnalyses(functionAnalysisManager);
-    passBuilder.registerLoopAnalyses(loopAnalysisManager);
-    passBuilder.crossRegisterProxies(loopAnalysisManager, functionAnalysisManager,
-                                   cGSCCAnalysisManager, moduleAnalysisManager);
-
-    // 最適化レベルに応じたパスの設定
-    switch (level)
-    {
-        case 0:
-            passManager = passBuilder.buildO0DefaultPipeline(llvm::OptimizationLevel::O0);
-            break;
-        default:
-            passManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-    }
-
-    functionPassManager = passBuilder.buildFunctionSimplificationPipeline(
-        llvm::OptimizationLevel::O2, llvm::ThinOrFullLTOPhase::None);
+    // 分析マネージャーの初期化のみを行い、最適化は無効化
+    moduleAnalysisManager = llvm::ModuleAnalysisManager();
 }
 
 void Compiler::compile(const AST::Program& program)
 {
-    for (const auto& stmt : program.statements)
-    {
-        if (stmt)
-        {
-            compileStatement(stmt.get());
-        }
-    }
+    std::cout << "Starting compilation..." << std::endl;
     
-    // コンパイル後に最適化を実行
-    runOptimizations();
+    // 既存のモジュールをクリア
+    module = std::make_unique<llvm::Module>("monkey_jit", *context);
+    builder = std::make_unique<llvm::IRBuilder<>>(*context);
+    namedValues.clear();
+    
+    try {
+        std::cout << "Creating main function..." << std::endl;
+        // メイン関数の作成
+        llvm::FunctionType* mainType = llvm::FunctionType::get(
+            llvm::Type::getInt64Ty(*context), false);
+        llvm::Function* mainFunc = llvm::Function::Create(
+            mainType, llvm::Function::ExternalLinkage, "main", module.get());
+        
+        std::cout << "Creating entry block..." << std::endl;
+        // エントリーブロックの作成
+        llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "entry", mainFunc);
+        builder->SetInsertPoint(bb);
+        
+        // 文のコンパイル
+        llvm::Value* lastValue = nullptr;
+        std::cout << "Compiling statements..." << std::endl;
+        for (const auto& stmt : program.statements)
+        {
+            if (stmt)
+            {
+                std::cout << "Compiling statement: " << stmt->String() << std::endl;
+                lastValue = compileStatement(stmt.get());
+                if (lastValue)
+                {
+                    std::cout << "Statement compiled successfully" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Statement compilation returned nullptr" << std::endl;
+                }
+            }
+        }
+        
+        std::cout << "Setting return value..." << std::endl;
+        // 戻り値の設定
+        if (!lastValue)
+        {
+            lastValue = llvm::ConstantInt::get(*context, llvm::APInt(64, 0));
+        }
+        builder->CreateRet(lastValue);
+        
+        std::cout << "Verifying module..." << std::endl;
+        // 検証を実行
+        std::string error;
+        llvm::raw_string_ostream errorStream(error);
+        if (llvm::verifyModule(*module, &errorStream))
+        {
+            std::cout << "Module verification failed!" << std::endl;
+            throw std::runtime_error("Module verification failed: " + error);
+        }
+        
+        // 最適化は一時的にスキップ
+        std::cout << "Skipping optimizations..." << std::endl;
+        std::cout << "Compilation completed successfully" << std::endl;
+        
+    } catch (const std::exception& e) {
+        std::cout << "Compilation failed with exception: " << e.what() << std::endl;
+        throw;
+    }
 }
 
 void Compiler::runOptimizations()
 {
-    // モジュールレベルの最適化を実行
-    passManager.run(*module, moduleAnalysisManager);
+    // 最適化を一時的に無効化
+    std::cout << "Optimizations disabled" << std::endl;
+    return;
 }
 
-void Compiler::compileStatement(const AST::Statement *stmt)
+llvm::Value* Compiler::compileStatement(const AST::Statement* stmt)
 {
-    if (auto exprStmt = dynamic_cast<const AST::ExpressionStatement *>(stmt))
+    if (auto exprStmt = dynamic_cast<const AST::ExpressionStatement*>(stmt))
     {
         if (exprStmt->expression)
         {
-            compileExpression(exprStmt->expression.get());
+            return compileExpression(exprStmt->expression.get());
         }
     }
-    // 他の文型のハンドリングを追加
+    else if (auto letStmt = dynamic_cast<const AST::LetStatement*>(stmt))
+    {
+        compileLetStatement(letStmt);
+    }
+    return nullptr;
 }
 
 llvm::Value *Compiler::compileExpression(const AST::Expression *expr)
 {
-    if (auto intLiteral = dynamic_cast<const AST::IntegerLiteral *>(expr))
-    {
-        return compileIntegerLiteral(intLiteral);
+    try {
+        if (auto intLiteral = dynamic_cast<const AST::IntegerLiteral*>(expr))
+        {
+            return compileIntegerLiteral(intLiteral);
+        }
+        if (auto infixExpr = dynamic_cast<const AST::InfixExpression*>(expr))
+        {
+            return compileInfixExpression(infixExpr);
+        }
+        if (auto prefixExpr = dynamic_cast<const AST::PrefixExpression*>(expr))
+        {
+            return compilePrefixExpression(prefixExpr);
+        }
+        if (auto booleanLiteral = dynamic_cast<const AST::BooleanLiteral*>(expr))
+        {
+            return compileBooleanLiteral(booleanLiteral);
+        }
+        if (auto identifier = dynamic_cast<const AST::Identifier*>(expr))
+        {
+            return compileIdentifier(identifier);
+        }
+        if (auto functionLiteral = dynamic_cast<const AST::FunctionLiteral*>(expr))
+        {
+            return compileFunctionLiteral(functionLiteral);
+        }
+        if (auto callExpr = dynamic_cast<const AST::CallExpression*>(expr))
+        {
+            return compileCallExpression(callExpr);
+        }
+    } catch (...) {
+        return nullptr;
     }
-    if (auto infixExpr = dynamic_cast<const AST::InfixExpression *>(expr))
-    {
-        return compileInfixExpression(infixExpr);
-    }
-    if (auto prefixExpr = dynamic_cast<const AST::PrefixExpression *>(expr))
-    {
-        return compilePrefixExpression(prefixExpr);
-    }
-    if (auto booleanLiteral = dynamic_cast<const AST::BooleanLiteral *>(expr))
-    {
-        return compileBooleanLiteral(booleanLiteral);
-    }
-    if (auto identifier = dynamic_cast<const AST::Identifier *>(expr))
-    {
-        return compileIdentifier(identifier);
-    }
-    if (auto functionLiteral = dynamic_cast<const AST::FunctionLiteral *>(expr))
-    {
-        return compileFunctionLiteral(functionLiteral);
-    }
-    if (auto callExpr = dynamic_cast<const AST::CallExpression *>(expr))
-    {
-        return compileCallExpression(callExpr);
-    }
-    // 他の式型のハンドリングを追加
     return nullptr;
 }
 
@@ -120,31 +160,65 @@ llvm::Value *Compiler::compileIntegerLiteral(const AST::IntegerLiteral *literal)
     return llvm::ConstantInt::get(*context, llvm::APInt(64, literal->value, true));
 }
 
-llvm::Value *Compiler::compileInfixExpression(const AST::InfixExpression *infix)
+llvm::Value *Compiler::compileInfixExpression(const AST::InfixExpression* infix)
 {
-    auto left = compileExpression(infix->left.get());
-    auto right = compileExpression(infix->right.get());
-
-    if (!left || !right)
+    std::cout << "Compiling infix expression: " << infix->String() << std::endl;
+    
+    if (!infix || !infix->left || !infix->right)
+    {
+        std::cout << "Invalid infix expression structure" << std::endl;
         return nullptr;
+    }
 
+    std::cout << "Compiling left operand..." << std::endl;
+    auto left = compileExpression(infix->left.get());
+    if (!left)
+    {
+        std::cout << "Left operand compilation failed" << std::endl;
+        return nullptr;
+    }
+
+    std::cout << "Compiling right operand..." << std::endl;
+    auto right = compileExpression(infix->right.get());
+    if (!right)
+    {
+        std::cout << "Right operand compilation failed" << std::endl;
+        return nullptr;
+    }
+
+    // 両オペランドの型を64ビット整数に変換
+    if (left->getType()->isIntegerTy(1))
+    {
+        left = builder->CreateZExt(left, llvm::Type::getInt64Ty(*context));
+    }
+    if (right->getType()->isIntegerTy(1))
+    {
+        right = builder->CreateZExt(right, llvm::Type::getInt64Ty(*context));
+    }
+
+    std::cout << "Creating operation: " << infix->op << std::endl;
     if (infix->op == "+")
     {
-        return builder->CreateAdd(left, right, "addtmp");
+        auto result = builder->CreateAdd(left, right);
+        result->setName("add");
+        return result;
+    }
+    else if (infix->op == "*")
+    {
+        auto result = builder->CreateMul(left, right);
+        result->setName("mul");
+        return result;
     }
     else if (infix->op == "-")
     {
         return builder->CreateSub(left, right, "subtmp");
-    }
-    else if (infix->op == "*")
-    {
-        return builder->CreateMul(left, right, "multmp");
     }
     else if (infix->op == "/")
     {
         return builder->CreateSDiv(left, right, "divtmp");
     }
 
+    std::cout << "Unknown operator: " << infix->op << std::endl;
     return nullptr;
 }
 
@@ -155,7 +229,24 @@ llvm::Value* Compiler::compilePrefixExpression(const AST::PrefixExpression* pref
 
     if (prefix->op == "!")
     {
-        return builder->CreateNot(operand, "nottmp");
+        // 真偽値を反転
+        if (operand->getType()->isIntegerTy(1))
+        {
+            auto notResult = builder->CreateXor(operand, 
+                llvm::ConstantInt::get(operand->getType(), 1));
+            notResult->setName("not");
+            // i1をi64に拡張
+            return builder->CreateZExt(notResult, llvm::Type::getInt64Ty(*context));
+        }
+        else
+        {
+            // 64ビット整数を真偽値として扱う
+            auto isZero = builder->CreateICmpEQ(operand, 
+                llvm::ConstantInt::get(operand->getType(), 0));
+            isZero->setName("not");
+            // i1をi64に拡張
+            return builder->CreateZExt(isZero, llvm::Type::getInt64Ty(*context));
+        }
     }
     else if (prefix->op == "-")
     {
@@ -166,7 +257,8 @@ llvm::Value* Compiler::compilePrefixExpression(const AST::PrefixExpression* pref
 
 llvm::Value* Compiler::compileBooleanLiteral(const AST::BooleanLiteral* boolean)
 {
-    return llvm::ConstantInt::get(*context, llvm::APInt(1, boolean->value ? 1 : 0, false));
+    auto value = llvm::ConstantInt::get(*context, llvm::APInt(1, boolean->value ? 1 : 0, false));
+    return builder->CreateZExt(value, llvm::Type::getInt64Ty(*context));
 }
 
 llvm::Value* Compiler::compileIdentifier(const AST::Identifier* ident)
@@ -212,6 +304,10 @@ llvm::Value* Compiler::compileFunctionLiteral(const AST::FunctionLiteral* func)
         reinterpret_cast<std::uintptr_t>(func));
     llvm::Function* function = createFunction(funcName, argNames);
     
+    // 現在のビルダーの状態を保存
+    auto prevBlock = builder->GetInsertBlock();
+    auto prevFunc = builder->GetInsertBlock()->getParent();
+
     // 関数本体のコンパイル
     llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "entry", function);
     builder->SetInsertPoint(bb);
@@ -229,12 +325,30 @@ llvm::Value* Compiler::compileFunctionLiteral(const AST::FunctionLiteral* func)
     // 関数本体のコンパイル
     if (func->body)
     {
+        llvm::Value* lastValue = nullptr;
         for (const auto& stmt : func->body->statements)
         {
-            compileStatement(stmt.get());
+            lastValue = compileStatement(stmt.get());
+        }
+        
+        // 戻り値の設定
+        if (lastValue)
+        {
+            builder->CreateRet(lastValue);
+        }
+        else
+        {
+            builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
         }
     }
+    else
+    {
+        builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
+    }
     
+    // 元のコンテキストに戻る
+    builder->SetInsertPoint(prevBlock);
+
     return function;
 }
 
@@ -253,6 +367,58 @@ std::string Compiler::getIR() const
     llvm::raw_string_ostream os(ir);
     module->print(os, nullptr);
     return ir;
+}
+
+llvm::Value* Compiler::compileCallExpression(const AST::CallExpression* call)
+{
+    // 関数のコンパイル
+    llvm::Value* callee = compileExpression(call->function.get());
+    if (!callee) return nullptr;
+
+    // 引数のコンパイル
+    std::vector<llvm::Value*> args;
+    for (const auto& arg : call->arguments)
+    {
+        if (auto compiled = compileExpression(arg.get()))
+        {
+            args.push_back(compiled);
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+
+    // 関数呼び出し
+    if (auto func = llvm::dyn_cast<llvm::Function>(callee))
+    {
+        if (func->arg_size() != args.size())
+        {
+            return nullptr; // 引数の数が一致しない
+        }
+        return builder->CreateCall(func, args, "calltmp");
+    }
+
+    return nullptr;
+}
+
+void Compiler::compileLetStatement(const AST::LetStatement* let)
+{
+    // 値の評価
+    llvm::Value* value = nullptr;
+    if (let->value)
+    {
+        value = compileExpression(let->value.get());
+    }
+    if (!value) return;
+
+    // 変数のアロケーション
+    llvm::Function* function = builder->GetInsertBlock()->getParent();
+    llvm::AllocaInst* alloca = createEntryBlockAlloca(function, let->name->value);
+    
+    // 値の格納
+    builder->CreateStore(value, alloca);
+    namedValues[let->name->value] = alloca;
 }
 
 } // namespace JIT

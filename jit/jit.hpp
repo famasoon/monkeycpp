@@ -7,6 +7,7 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <memory>
 #include <unordered_map>
+#include <llvm/IR/Verifier.h>
 
 namespace JIT
 {
@@ -41,7 +42,7 @@ class Compiler
     void runOptimizations();
 
     llvm::Value* compileExpression(const AST::Expression* expr);
-    void compileStatement(const AST::Statement* stmt);
+    llvm::Value* compileStatement(const AST::Statement* stmt);
     
     // 新しいコンパイルメソッド
     llvm::Value* compileIntegerLiteral(const AST::IntegerLiteral* literal);
