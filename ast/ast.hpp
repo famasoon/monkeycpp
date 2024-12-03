@@ -91,6 +91,8 @@ class Identifier : public Expression
     std::string TokenLiteral() const override;
     std::string String() const override;
     Expression *clone() const override;
+    
+    const std::string& getValue() const { return value; }
 };
 
 // let文
@@ -292,7 +294,7 @@ public:
           alternative(std::move(alt)) {}
 
     void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.literal; }
+    std::string TokenLiteral() const override { return token.getLiteral(); }
     std::string String() const override {
         std::string result = "if" + condition->String() + " " + consequence->String();
         if (alternative) {

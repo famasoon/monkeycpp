@@ -77,11 +77,11 @@ void Parser::nextToken()
 
 bool Parser::curTokenIs(Token::TokenType t) const
 {
-    return curToken.type == t;
+    return curToken.getType() == t;
 }
 bool Parser::peekTokenIs(Token::TokenType t) const
 {
-    return peekToken.type == t;
+    return peekToken.getType() == t;
 }
 
 bool Parser::expectPeek(Token::TokenType t)
@@ -98,7 +98,7 @@ bool Parser::expectPeek(Token::TokenType t)
 void Parser::peekError(Token::TokenType t)
 {
     std::string msg = "expected next token to be " + Token::toString(t) + ", got " +
-                      Token::toString(peekToken.type) + " instead";
+                      Token::toString(peekToken.getType()) + " instead";
     errors.push_back(msg);
 }
 
@@ -115,7 +115,7 @@ void Parser::noPrefixParseFnError(Token::TokenType t)
 
 Parser::Precedence Parser::peekPrecedence() const
 {
-    auto it = precedences.find(peekToken.type);
+    auto it = precedences.find(peekToken.getType());
     if (it != precedences.end())
     {
         return it->second;
@@ -125,7 +125,7 @@ Parser::Precedence Parser::peekPrecedence() const
 
 Parser::Precedence Parser::curPrecedence() const
 {
-    auto it = precedences.find(curToken.type);
+    auto it = precedences.find(curToken.getType());
     if (it != precedences.end())
     {
         return it->second;
@@ -150,7 +150,7 @@ std::unique_ptr<AST::Program> Parser::ParseProgram()
 
     while (!curTokenIs(Token::TokenType::EOF_))
     {
-        trace("Parsing statement: " + curToken.literal);
+        trace("Parsing statement: " + curToken.getLiteral());
         if (auto stmt = parseStatement())
         {
             program->statements.push_back(std::move(stmt));
@@ -170,7 +170,7 @@ std::unique_ptr<AST::Program> Parser::ParseProgram()
 
 std::unique_ptr<AST::Statement> Parser::parseStatement()
 {
-    switch (curToken.type)
+    switch (curToken.getType())
     {
     case Token::TokenType::LET:
         return parseLetStatement();
@@ -186,11 +186,11 @@ std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
     trace("START parseExpression with precedence: " + std::to_string(static_cast<int>(precedence)));
     increaseIndent();
 
-    auto prefix = prefixParseFns.find(curToken.type);
+    auto prefix = prefixParseFns.find(curToken.getType());
     if (prefix == prefixParseFns.end())
     {
-        noPrefixParseFnError(curToken.type);
-        trace("No prefix parse function found for: " + Token::toString(curToken.type));
+        noPrefixParseFnError(curToken.getType());
+        trace("No prefix parse function found for: " + Token::toString(curToken.getType()));
         decreaseIndent();
         return nullptr;
     }
@@ -205,8 +205,8 @@ std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
 
     while (!peekTokenIs(Token::TokenType::SEMICOLON) && precedence < peekPrecedence())
     {
-        trace("Found infix operator: " + peekToken.literal);
-        auto infix = infixParseFns.find(peekToken.type);
+        trace("Found infix operator: " + peekToken.getLiteral());
+        auto infix = infixParseFns.find(peekToken.getType());
         if (infix == infixParseFns.end())
         {
             trace("No infix parse function found");
@@ -229,26 +229,26 @@ std::unique_ptr<AST::Expression> Parser::parseExpression(Precedence precedence)
 
 std::unique_ptr<AST::Expression> Parser::parseIdentifier()
 {
-    return std::make_unique<AST::Identifier>(curToken, curToken.literal);
+    return std::make_unique<AST::Identifier>(curToken, curToken.getLiteral());
 }
 
 std::unique_ptr<AST::Expression> Parser::parseIntegerLiteral()
 {
     try
     {
-        int64_t value = std::stoll(curToken.literal);
+        int64_t value = std::stoll(curToken.getLiteral());
         return std::make_unique<AST::IntegerLiteral>(curToken, value);
     }
     catch (const std::exception &e)
     {
-        registerError("could not parse " + curToken.literal + " as integer");
+        registerError("could not parse " + curToken.getLiteral() + " as integer");
         return nullptr;
     }
 }
 
 std::unique_ptr<AST::Expression> Parser::parsePrefixExpression()
 {
-    auto expression = std::make_unique<AST::PrefixExpression>(curToken, curToken.literal);
+    auto expression = std::make_unique<AST::PrefixExpression>(curToken, curToken.getLiteral());
     nextToken();
 
     expression->right = parseExpression(Precedence::PREFIX);
@@ -264,7 +264,7 @@ std::unique_ptr<AST::Expression> Parser::parsePrefixExpression()
 std::unique_ptr<AST::Expression> Parser::parseInfixExpression(std::unique_ptr<AST::Expression> left)
 {
     auto expression =
-        std::make_unique<AST::InfixExpression>(curToken, curToken.literal, std::move(left));
+        std::make_unique<AST::InfixExpression>(curToken, curToken.getLiteral(), std::move(left));
 
     auto precedence = curPrecedence();
     nextToken();
@@ -303,10 +303,11 @@ std::unique_ptr<AST::LetStatement> Parser::parseLetStatement()
         return nullptr;
     }
 
-    stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.literal);
+    stmt->name = std::make_unique<AST::Identifier>(curToken, curToken.getLiteral());
 
     if (!expectPeek(Token::TokenType::ASSIGN))
     {
+        expectAssignError();
         decreaseIndent();
         return nullptr;
     }
@@ -410,13 +411,13 @@ std::vector<std::unique_ptr<AST::Identifier>> Parser::parseFunctionParameters()
     }
 
     nextToken();
-    params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.literal));
+    params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.getLiteral()));
 
     while (peekTokenIs(Token::TokenType::COMMA))
     {
         nextToken(); // COMMA
         nextToken(); // パラメータ
-        params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.literal));
+        params.push_back(std::make_unique<AST::Identifier>(curToken, curToken.getLiteral()));
     }
 
     if (!expectPeek(Token::TokenType::RPAREN))
@@ -512,7 +513,7 @@ std::unique_ptr<AST::Expression> Parser::parseGroupedExpression()
 
 std::unique_ptr<AST::Expression> Parser::parseStringLiteral()
 {
-    return std::make_unique<AST::StringLiteral>(curToken, curToken.literal);
+    return std::make_unique<AST::StringLiteral>(curToken, curToken.getLiteral());
 }
 
 std::unique_ptr<AST::Expression> Parser::parseArrayLiteral()
@@ -652,6 +653,13 @@ std::unique_ptr<AST::Expression> Parser::parseForExpression() {
 
     forExpr->body = parseBlockStatement();
     return forExpr;
+}
+
+// 代入演算子のエラーメッセージを追加
+void Parser::expectAssignError()
+{
+    std::string msg = "expected next token to be ASSIGN";
+    errors.push_back(msg);
 }
 
 } // namespace Parser

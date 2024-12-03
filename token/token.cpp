@@ -1,141 +1,89 @@
 #include "token.hpp"
 
-namespace Token
-{
+namespace Token {
 
-std::string toString(TokenType type)
-{
-    switch (type)
-    {
-    case TokenType::ILLEGAL:
-        return "ILLEGAL";
-    case TokenType::EOF_:
-        return "EOF";
-    case TokenType::IDENT:
-        return "IDENT";
-    case TokenType::INT:
-        return "INT";
-    case TokenType::ASSIGN:
-        return "ASSIGN";
-    case TokenType::PLUS:
-        return "PLUS";
-    case TokenType::MINUS:
-        return "MINUS";
-    case TokenType::BANG:
-        return "BANG";
-    case TokenType::ASTERISK:
-        return "ASTERISK";
-    case TokenType::SLASH:
-        return "SLASH";
-    case TokenType::LT:
-        return "LT";
-    case TokenType::GT:
-        return "GT";
-    case TokenType::EQ:
-        return "EQ";
-    case TokenType::NOT_EQ:
-        return "NOT_EQ";
-    case TokenType::COMMA:
-        return "COMMA";
-    case TokenType::SEMICOLON:
-        return "SEMICOLON";
-    case TokenType::LPAREN:
-        return "LPAREN";
-    case TokenType::RPAREN:
-        return "RPAREN";
-    case TokenType::LBRACE:
-        return "LBRACE";
-    case TokenType::RBRACE:
-        return "RBRACE";
-    case TokenType::FUNCTION:
-        return "FUNCTION";
-    case TokenType::LET:
-        return "LET";
-    case TokenType::TRUE:
-        return "TRUE";
-    case TokenType::FALSE:
-        return "FALSE";
-    case TokenType::IF:
-        return "IF";
-    case TokenType::ELSE:
-        return "ELSE";
-    case TokenType::RETURN:
-        return "RETURN";
-    case TokenType::STRING:
-        return "STRING";
-    case TokenType::LBRACKET:
-        return "LBRACKET";
-    case TokenType::RBRACKET:
-        return "RBRACKET";
-    case TokenType::WHILE:
-        return "WHILE";
-    case TokenType::FOR:
-        return "FOR";
-    default:
-        return "UNKNOWN";
+namespace {
+    const std::unordered_map<std::string, TokenType> keywords = {
+        {"fn", TokenType::FUNCTION},
+        {"let", TokenType::LET},
+        {"true", TokenType::TRUE},
+        {"false", TokenType::FALSE},
+        {"if", TokenType::IF},
+        {"else", TokenType::ELSE},
+        {"return", TokenType::RETURN},
+        {"while", TokenType::WHILE},
+        {"for", TokenType::FOR}
+    };
+}
+
+std::string toString(TokenType type) {
+    switch (type) {
+        case TokenType::ILLEGAL: return "ILLEGAL";
+        case TokenType::EOF_: return "EOF";
+        case TokenType::IDENT: return "IDENT";
+        case TokenType::INT: return "INT";
+        case TokenType::STRING: return "STRING";
+        case TokenType::ASSIGN: return "=";
+        case TokenType::PLUS: return "+";
+        case TokenType::MINUS: return "-";
+        case TokenType::BANG: return "!";
+        case TokenType::ASTERISK: return "*";
+        case TokenType::SLASH: return "/";
+        case TokenType::LT: return "<";
+        case TokenType::GT: return ">";
+        case TokenType::EQ: return "==";
+        case TokenType::NOT_EQ: return "!=";
+        case TokenType::COMMA: return ",";
+        case TokenType::SEMICOLON: return ";";
+        case TokenType::LPAREN: return "(";
+        case TokenType::RPAREN: return ")";
+        case TokenType::LBRACE: return "{";
+        case TokenType::RBRACE: return "}";
+        case TokenType::LBRACKET: return "[";
+        case TokenType::RBRACKET: return "]";
+        case TokenType::FUNCTION: return "fn";
+        case TokenType::LET: return "let";
+        case TokenType::TRUE: return "true";
+        case TokenType::FALSE: return "false";
+        case TokenType::IF: return "if";
+        case TokenType::ELSE: return "else";
+        case TokenType::RETURN: return "return";
+        case TokenType::WHILE: return "while";
+        case TokenType::FOR: return "for";
+        default: return "UNKNOWN";
     }
 }
 
-// 静的メンバ変数の定義
-const std::string Token::ILLEGAL = "ILLEGAL";
-const std::string Token::EOF_ = "EOF";
-const std::string Token::IDENT = "IDENT";
-const std::string Token::INT = "INT";
-const std::string Token::ASSIGN = "=";
-const std::string Token::PLUS = "+";
-const std::string Token::MINUS = "-";
-const std::string Token::BANG = "!";
-const std::string Token::ASTERISK = "*";
-const std::string Token::SLASH = "/";
-const std::string Token::LT = "<";
-const std::string Token::GT = ">";
-const std::string Token::EQ = "==";
-const std::string Token::NOT_EQ = "!=";
-const std::string Token::COMMA = ",";
-const std::string Token::SEMICOLON = ";";
-const std::string Token::LPAREN = "(";
-const std::string Token::RPAREN = ")";
-const std::string Token::LBRACE = "{";
-const std::string Token::RBRACE = "}";
-const std::string Token::FUNCTION = "FUNCTION";
-const std::string Token::LET = "LET";
-const std::string Token::TRUE = "TRUE";
-const std::string Token::FALSE = "FALSE";
-const std::string Token::IF = "IF";
-const std::string Token::ELSE = "ELSE";
-const std::string Token::RETURN = "RETURN";
-const std::string Token::LBRACKET = "[";
-const std::string Token::RBRACKET = "]";
-const std::string Token::WHILE = "WHILE";
-const std::string Token::FOR = "FOR";
+Token::Token(TokenType type, std::string literal) 
+    : type_(type), literal_(std::move(literal)) {}
 
-Token::Token(TokenType type, std::string literal) : type(type), literal(std::move(literal))
-{
+std::string Token::getTypeString() const {
+    return toString(type_);
 }
 
-bool Token::operator==(const Token &other) const
-{
-    return type == other.type && literal == other.literal;
+bool Token::operator==(const Token& other) const {
+    return type_ == other.type_ && literal_ == other.literal_;
 }
 
-bool Token::operator==(const TokenType &other) const
-{
-    return type == other;
+bool Token::operator==(const TokenType& other) const {
+    return type_ == other;
 }
 
-bool Token::operator!=(const Token &other) const
-{
+bool Token::operator!=(const Token& other) const {
     return !(*this == other);
 }
 
-bool Token::operator!=(const TokenType &other) const
-{
-    return type != other;
+bool Token::operator!=(const TokenType& other) const {
+    return type_ != other;
 }
 
-std::string Token::getType() const
-{
-    return toString(type);
+bool Token::isKeyword(const std::string& word) {
+    return keywords.find(word) != keywords.end();
+}
+
+TokenType Token::lookupKeyword(const std::string& word) {
+    auto it = keywords.find(word);
+    return it != keywords.end() ? it->second : TokenType::IDENT;
 }
 
 } // namespace Token

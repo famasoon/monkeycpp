@@ -36,7 +36,7 @@ void BlockStatement::statementNode()
 
 std::string BlockStatement::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string BlockStatement::String() const
@@ -65,7 +65,7 @@ void Identifier::expressionNode()
 
 std::string Identifier::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string Identifier::String() const
@@ -89,7 +89,7 @@ void LetStatement::statementNode()
 
 std::string LetStatement::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string LetStatement::String() const
@@ -133,7 +133,7 @@ void ReturnStatement::statementNode()
 
 std::string ReturnStatement::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string ReturnStatement::String() const
@@ -168,7 +168,7 @@ void ExpressionStatement::statementNode()
 
 std::string ExpressionStatement::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string ExpressionStatement::String() const
@@ -188,12 +188,12 @@ void IntegerLiteral::expressionNode()
 
 std::string IntegerLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string IntegerLiteral::String() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 Expression *IntegerLiteral::clone() const
@@ -213,7 +213,7 @@ void PrefixExpression::expressionNode()
 
 std::string PrefixExpression::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string PrefixExpression::String() const
@@ -251,7 +251,7 @@ void InfixExpression::expressionNode()
 
 std::string InfixExpression::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string InfixExpression::String() const
@@ -296,12 +296,12 @@ void BooleanLiteral::expressionNode()
 
 std::string BooleanLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string BooleanLiteral::String() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 Expression *BooleanLiteral::clone() const
@@ -320,12 +320,12 @@ void FunctionLiteral::expressionNode()
 
 std::string FunctionLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string FunctionLiteral::String() const
 {
-    std::string out = token.literal + "(";
+    std::string out = token.getLiteral() + "(";
     for (size_t i = 0; i < parameters.size(); i++)
     {
         out += parameters[i]->String();
@@ -372,7 +372,7 @@ void CallExpression::expressionNode()
 
 std::string CallExpression::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string CallExpression::String() const
@@ -419,7 +419,7 @@ void StringLiteral::expressionNode()
 
 std::string StringLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string StringLiteral::String() const
@@ -443,7 +443,7 @@ void ArrayLiteral::expressionNode()
 
 std::string ArrayLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string ArrayLiteral::String() const
@@ -489,7 +489,7 @@ void IndexExpression::expressionNode()
 
 std::string IndexExpression::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string IndexExpression::String() const
@@ -533,7 +533,7 @@ void HashLiteral::expressionNode()
 
 std::string HashLiteral::TokenLiteral() const
 {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string HashLiteral::String() const
@@ -654,7 +654,7 @@ WhileExpression::WhileExpression(Token::Token tok,
 void WhileExpression::expressionNode() {}
 
 std::string WhileExpression::TokenLiteral() const { 
-    return token.literal; 
+    return token.getLiteral(); 
 }
 
 std::string WhileExpression::String() const {
@@ -690,7 +690,7 @@ ForExpression::ForExpression(Token::Token tok,
 void ForExpression::expressionNode() {}
 
 std::string ForExpression::TokenLiteral() const {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string ForExpression::String() const {
@@ -725,7 +725,7 @@ LetExpression::LetExpression(Token::Token tok,
 void LetExpression::expressionNode() {}
 
 std::string LetExpression::TokenLiteral() const {
-    return token.literal;
+    return token.getLiteral();
 }
 
 std::string LetExpression::String() const {

@@ -110,7 +110,7 @@ TEST_F(ParserTest, TestLetStatements)
     auto stmt1 = dynamic_cast<AST::LetStatement *>(program->statements[0].get());
     ASSERT_NE(stmt1, nullptr) << "Not a LetStatement";
     EXPECT_EQ(stmt1->TokenLiteral(), "let");
-    EXPECT_EQ(stmt1->name->value, "x");
+    EXPECT_EQ(stmt1->name->getValue(), "x");
     EXPECT_EQ(stmt1->name->TokenLiteral(), "x");
 
     auto stmt2 = dynamic_cast<AST::LetStatement *>(program->statements[1].get());

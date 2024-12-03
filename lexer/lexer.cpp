@@ -98,72 +98,71 @@ Token::Token Lexer::NextToken()
         if (peekChar() == '=')
         {
             readChar();
-            tok = {Token::TokenType::EQ, "=="};
+            tok = Token::Token(Token::TokenType::EQ, "==");
         }
         else
         {
-            tok = {Token::TokenType::ASSIGN, "="};
+            tok = Token::Token(Token::TokenType::ASSIGN, "=");
         }
         break;
     case '+':
-        tok = {Token::TokenType::PLUS, "+"};
+        tok = Token::Token(Token::TokenType::PLUS, "+");
         break;
     case '-':
-        tok = {Token::TokenType::MINUS, "-"};
+        tok = Token::Token(Token::TokenType::MINUS, "-");
         break;
     case '!':
         if (peekChar() == '=')
         {
             readChar();
-            tok = {Token::TokenType::NOT_EQ, "!="};
+            tok = Token::Token(Token::TokenType::NOT_EQ, "!=");
         }
         else
         {
-            tok = {Token::TokenType::BANG, "!"};
+            tok = Token::Token(Token::TokenType::BANG, "!");
         }
         break;
     case '*':
-        tok = {Token::TokenType::ASTERISK, "*"};
+        tok = Token::Token(Token::TokenType::ASTERISK, "*");
         break;
     case '/':
-        tok = {Token::TokenType::SLASH, "/"};
+        tok = Token::Token(Token::TokenType::SLASH, "/");
         break;
     case '<':
-        tok = {Token::TokenType::LT, "<"};
+        tok = Token::Token(Token::TokenType::LT, "<");
         break;
     case '>':
-        tok = {Token::TokenType::GT, ">"};
+        tok = Token::Token(Token::TokenType::GT, ">");
         break;
     case ';':
-        tok = {Token::TokenType::SEMICOLON, ";"};
+        tok = Token::Token(Token::TokenType::SEMICOLON, ";");
         break;
     case '(':
-        tok = {Token::TokenType::LPAREN, "("};
+        tok = Token::Token(Token::TokenType::LPAREN, "(");
         break;
     case ')':
-        tok = {Token::TokenType::RPAREN, ")"};
+        tok = Token::Token(Token::TokenType::RPAREN, ")");
         break;
     case ',':
-        tok = {Token::TokenType::COMMA, ","};
+        tok = Token::Token(Token::TokenType::COMMA, ",");
         break;
     case '{':
-        tok = {Token::TokenType::LBRACE, "{"};
+        tok = Token::Token(Token::TokenType::LBRACE, "{");
         break;
     case '}':
-        tok = {Token::TokenType::RBRACE, "}"};
+        tok = Token::Token(Token::TokenType::RBRACE, "}");
         break;
     case 0:
-        tok = {Token::TokenType::EOF_, ""};
+        tok = Token::Token(Token::TokenType::EOF_, "");
         break;
     case '"':
-        tok.type = Token::TokenType::STRING;
-        tok.literal = readString();
+        tok = Token::Token(Token::TokenType::STRING, readString());
         return tok;
     case '[':
-        tok = {Token::TokenType::LBRACKET, "["};
+        tok = Token::Token(Token::TokenType::LBRACKET, "[");
         break;
     case ']':
-        tok = {Token::TokenType::RBRACKET, "]"};
+        tok = Token::Token(Token::TokenType::RBRACKET, "]");
         break;
     default:
         if (std::isalpha(ch) || ch == '_')

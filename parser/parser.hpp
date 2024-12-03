@@ -97,6 +97,7 @@ class Parser
     void peekError(Token::TokenType t);
     void registerError(const std::string &msg);
     void noPrefixParseFnError(Token::TokenType t);
+    void expectAssignError();
 
     // 文のパース
     std::unique_ptr<AST::Statement> parseStatement();

@@ -74,14 +74,14 @@ TEST(LexerTest, TestNextToken)
     {
         auto tok = lexer.NextToken();
 
-        EXPECT_EQ(tok.type, tests[i].expectedType)
+        EXPECT_EQ(tok.getType(), tests[i].expectedType)
             << "tests[" << i << "] - tokentype wrong. "
             << "expected=" << Token::toString(tests[i].expectedType)
-            << ", got=" << Token::toString(tok.type);
+            << ", got=" << Token::toString(tok.getType());
 
-        EXPECT_EQ(tok.literal, tests[i].expectedLiteral)
+        EXPECT_EQ(tok.getLiteral(), tests[i].expectedLiteral)
             << "tests[" << i << "] - literal wrong. "
-            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
+            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.getLiteral();
     }
 }
 
@@ -123,14 +123,14 @@ TEST(LexerTest, TestWhileLoop)
     for (size_t i = 0; i < tests.size(); i++)
     {
         auto tok = lexer.NextToken();
-        EXPECT_EQ(tok.type, tests[i].expectedType)
+        EXPECT_EQ(tok.getType(), tests[i].expectedType)
             << "tests[" << i << "] - tokentype wrong. "
             << "expected=" << Token::toString(tests[i].expectedType)
-            << ", got=" << Token::toString(tok.type);
+            << ", got=" << Token::toString(tok.getType());
 
-        EXPECT_EQ(tok.literal, tests[i].expectedLiteral)
+        EXPECT_EQ(tok.getLiteral(), tests[i].expectedLiteral)
             << "tests[" << i << "] - literal wrong. "
-            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
+            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.getLiteral();
     }
 }
 
@@ -176,13 +176,13 @@ TEST(LexerTest, TestForLoop)
     for (size_t i = 0; i < tests.size(); i++)
     {
         auto tok = lexer.NextToken();
-        EXPECT_EQ(tok.type, tests[i].expectedType)
+        EXPECT_EQ(tok.getType(), tests[i].expectedType)
             << "tests[" << i << "] - tokentype wrong. "
             << "expected=" << Token::toString(tests[i].expectedType)
-            << ", got=" << Token::toString(tok.type);
+            << ", got=" << Token::toString(tok.getType());
 
-        EXPECT_EQ(tok.literal, tests[i].expectedLiteral)
+        EXPECT_EQ(tok.getLiteral(), tests[i].expectedLiteral)
             << "tests[" << i << "] - literal wrong. "
-            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.literal;
+            << "expected=" << tests[i].expectedLiteral << ", got=" << tok.getLiteral();
     }
 }
