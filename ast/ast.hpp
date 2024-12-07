@@ -287,29 +287,12 @@ public:
     IfExpression(Token::Token tok,
                  std::unique_ptr<Expression> cond,
                  std::unique_ptr<BlockStatement> cons,
-                 std::unique_ptr<BlockStatement> alt = nullptr)
-        : token(std::move(tok)), 
-          condition(std::move(cond)), 
-          consequence(std::move(cons)), 
-          alternative(std::move(alt)) {}
+                 std::unique_ptr<BlockStatement> alt = nullptr);
 
-    void expressionNode() override {}
-    std::string TokenLiteral() const override { return token.getLiteral(); }
-    std::string String() const override {
-        std::string result = "if" + condition->String() + " " + consequence->String();
-        if (alternative) {
-            result += "else " + alternative->String();
-        }
-        return result;
-    }
-    Expression* clone() const override {
-        return new IfExpression(
-            token,
-            std::unique_ptr<Expression>(condition->clone()),
-            std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(consequence->clone())),
-            alternative ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(alternative->clone())) : nullptr
-        );
-    }
+    void expressionNode() override;
+    std::string TokenLiteral() const override;
+    std::string String() const override;
+    Expression* clone() const override;
 
     const Expression* getCondition() const { return condition.get(); }
     const BlockStatement* getConsequence() const { return consequence.get(); }

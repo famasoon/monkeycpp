@@ -741,4 +741,37 @@ Expression* LetExpression::clone() const {
         value ? std::unique_ptr<Expression>(value->clone()) : nullptr
     );
 }
+
+// IfExpression implementation
+IfExpression::IfExpression(Token::Token tok,
+                          std::unique_ptr<Expression> cond,
+                          std::unique_ptr<BlockStatement> cons,
+                          std::unique_ptr<BlockStatement> alt)
+    : token(std::move(tok))
+    , condition(std::move(cond))
+    , consequence(std::move(cons))
+    , alternative(std::move(alt)) {}
+
+void IfExpression::expressionNode() {}
+
+std::string IfExpression::TokenLiteral() const {
+    return token.getLiteral();
+}
+
+std::string IfExpression::String() const {
+    std::string result = "if" + condition->String() + " " + consequence->String();
+    if (alternative) {
+        result += "else " + alternative->String();
+    }
+    return result;
+}
+
+Expression* IfExpression::clone() const {
+    return new IfExpression(
+        token,
+        std::unique_ptr<Expression>(condition->clone()),
+        std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(consequence->clone())),
+        alternative ? std::unique_ptr<BlockStatement>(static_cast<BlockStatement*>(alternative->clone())) : nullptr
+    );
+}
 } // namespace AST
