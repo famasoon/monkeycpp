@@ -120,7 +120,7 @@ class Parser
     std::unique_ptr<AST::Expression> parseGroupedExpression();
     std::unique_ptr<AST::Expression> parseStringLiteral();
 
-    // パース関
+    // パース関連
     std::unique_ptr<AST::Expression> parseArrayLiteral();
     std::unique_ptr<AST::Expression> parseIndexExpression(std::unique_ptr<AST::Expression> left);
 
