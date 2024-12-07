@@ -302,60 +302,90 @@ llvm::Function* Compiler::createFunction(const std::string& name,
 
 llvm::Value* Compiler::compileFunctionLiteral(const AST::FunctionLiteral* func)
 {
+    if (!func) return nullptr;
+
+    std::cout << "Compiling function literal..." << std::endl;
+
+    // パラメータ名を取得
     std::vector<std::string> argNames;
-    for (const auto& param : func->parameters)
-    {
-        argNames.push_back(param->value);
+    for (const auto& param : func->parameters) {
+        if (param) {
+            argNames.push_back(param->value);
+        }
     }
     
+    // 関数名を生成
     std::string funcName = "anonymous_func_" + std::to_string(
         reinterpret_cast<std::uintptr_t>(func));
-    llvm::Function* function = createFunction(funcName, argNames);
     
-    // 現在のビル���ーの状態を保存
-    auto prevBlock = builder->GetInsertBlock();
-    auto prevFunc = builder->GetInsertBlock()->getParent();
+    // パラメータの型を設定（すべてint64）
+    std::vector<llvm::Type*> paramTypes(argNames.size(), 
+                                      llvm::Type::getInt64Ty(*context));
 
-    // 関数本体のコンパイル
+    // 関数型を作成
+    llvm::FunctionType* funcType = llvm::FunctionType::get(
+        llvm::Type::getInt64Ty(*context), paramTypes, false);
+
+    // 関数を作成
+    llvm::Function* function = llvm::Function::Create(
+        funcType, llvm::Function::ExternalLinkage, funcName, module.get());
+
+    // パラメータ名を設定
+    unsigned idx = 0;
+    for (auto& arg : function->args()) {
+        arg.setName(argNames[idx++]);
+    }
+
+    // 関数本体のコンパイル用の新しい�ロックを作成
     llvm::BasicBlock* bb = llvm::BasicBlock::Create(*context, "entry", function);
-    builder->SetInsertPoint(bb);
     
-    // 引数の割り当て
+    // 現在のビルダーの状態を保存
+    auto savedBlock = builder->GetInsertBlock();
+    auto savedPoint = builder->GetInsertPoint();
+    
+    builder->SetInsertPoint(bb);
+
+    // 現在のスコープを保存
+    auto savedValues = namedValues;
     namedValues.clear();
-    for (auto& arg : function->args())
-    {
+
+    // パラメータをアロケート
+    for (auto& arg : function->args()) {
         llvm::AllocaInst* alloca = createEntryBlockAlloca(
             function, std::string(arg.getName()));
         builder->CreateStore(&arg, alloca);
         namedValues[std::string(arg.getName())] = alloca;
     }
-    
-    // 関数本体のコンパイル
-    if (func->body)
-    {
-        llvm::Value* lastValue = nullptr;
-        for (const auto& stmt : func->body->statements)
-        {
-            lastValue = compileStatement(stmt.get());
-        }
-        
-        // 戻り値の設定
-        if (lastValue)
-        {
-            builder->CreateRet(lastValue);
-        }
-        else
-        {
+
+    // 関数本体をコンパイル
+    llvm::Value* bodyValue = nullptr;
+    if (func->body) {
+        bodyValue = compileBlockStatement(func->body.get());  // .get()を使用
+        if (bodyValue) {
+            builder->CreateRet(bodyValue);
+        } else {
             builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
         }
-    }
-    else
-    {
+    } else {
         builder->CreateRet(llvm::ConstantInt::get(*context, llvm::APInt(64, 0)));
     }
+
+    // スコープを復元
+    namedValues = std::move(savedValues);
     
-    // 元のコンテキストに戻る
-    builder->SetInsertPoint(prevBlock);
+    // ビルダーの状態を復元
+    if (savedBlock) {
+        builder->SetInsertPoint(savedBlock, savedPoint);
+    }
+
+    // 関数の検証
+    std::string error;
+    llvm::raw_string_ostream errorStream(error);
+    if (llvm::verifyFunction(*function, &errorStream)) {
+        std::cout << "Function verification failed: " << error << std::endl;
+        function->eraseFromParent();
+        return nullptr;
+    }
 
     return function;
 }
@@ -412,17 +442,37 @@ llvm::Value* Compiler::compileCallExpression(const AST::CallExpression* call)
 
 void Compiler::compileLetStatement(const AST::LetStatement* let)
 {
-    // 値の評価
-    llvm::Value* value = nullptr;
-    if (let->value)
-    {
-        value = compileExpression(let->value.get());
+    if (!let || !let->name || !let->value) {
+        std::cout << "Invalid let statement" << std::endl;
+        return;
     }
-    if (!value) return;
+
+    std::cout << "Compiling let statement value..." << std::endl;
+    
+    // 値の評価
+    llvm::Value* value = compileExpression(let->value.get());
+    if (!value) {
+        std::cout << "Failed to compile value" << std::endl;
+        return;
+    }
+
+    // 現在の関数を取得
+    llvm::Function* function = builder->GetInsertBlock()->getParent();
+    if (!function) {
+        std::cout << "No current function" << std::endl;
+        return;
+    }
 
     // 変数のアロケーション
-    llvm::Function* function = builder->GetInsertBlock()->getParent();
-    llvm::AllocaInst* alloca = createEntryBlockAlloca(function, let->name->value);
+    llvm::AllocaInst* alloca = nullptr;
+    if (llvm::isa<llvm::Function>(value)) {
+        // 関数ポインタの場合
+        auto funcType = llvm::cast<llvm::Function>(value)->getFunctionType();
+        alloca = builder->CreateAlloca(funcType->getPointerTo(), nullptr, let->name->value);
+    } else {
+        // 通常の値の場合
+        alloca = createEntryBlockAlloca(function, let->name->value);
+    }
     
     // 値の格納
     builder->CreateStore(value, alloca);
